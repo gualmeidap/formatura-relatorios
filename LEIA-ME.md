@@ -16,7 +16,7 @@ As duas convivem: mesmo com o robô, o botão **Mais → Carregar planilha manua
 
 ## 1. Como está montado (produção)
 
-- **Site**: GitHub Pages deste repositório → `https://gualmeidap.github.io/formatura-relatorios/` (é o `index.html`; não contém dados).
+- **Site**: GitHub Pages deste repositório → `https://gualmeidap.github.io/tesouraria/` (é o `index.html`; não contém dados).
 - **Dados**: `dados.enc` no mesmo repositório, criptografado (AES-256-GCM) com a `DATA_KEY` do `.env`. O app pede essa senha uma vez no aparelho e depois carrega sozinho a cada abertura.
 - **Robô** (`sync/sync.py` + `sync/rodar.ps1`): roda **no PC do Gustavo**, entra no Keeper com a conta dela, baixa a planilha, criptografa e faz `git push`. Em ~1 min o Pages publica.
 
@@ -36,13 +36,18 @@ Pré-requisitos (já feitos neste PC): ambiente virtual em `.venv` (`python -m v
 schtasks /create /tn "Formatura - sync Keeper" /sc daily /st 23:30 /tr "powershell -NoProfile -ExecutionPolicy Bypass -File D:\sistemas\formatura-relatorios\sync\rodar.ps1" /f
 ```
 
-O PC precisa estar ligado (pode estar bloqueado) às 23:30. Para rodar também sempre que você fizer login no Windows (cobre dias em que o PC ficou desligado), crie uma segunda tarefa trocando `/sc daily /st 23:30` por `/sc onlogon`. Para remover: `schtasks /delete /tn "Formatura - sync Keeper" /f`.
+O PC precisa estar ligado (pode estar bloqueado) às 23:30.
+
+**Histórico das execuções** — três lugares para conferir:
+- no app, aba **Mais** → "Última execução do robô: data — sucesso/falhou" (vem do `status.json`, publicado a cada rodada, inclusive nas que falham; se falhou, a tela inicial mostra um aviso vermelho);
+- no GitHub, [histórico de commits](https://github.com/gualmeidap/tesouraria/commits/main): cada rodada vira um commit `dados: …` (sucesso) ou `robô falhou: …`;
+- no PC, `sync/ultimo-log.txt` com o log completo da última rodada. Para rodar também sempre que você fizer login no Windows (cobre dias em que o PC ficou desligado), crie uma segunda tarefa trocando `/sc daily /st 23:30` por `/sc onlogon`. Para remover: `schtasks /delete /tn "Formatura - sync Keeper" /f`.
 
 ---
 
 ## 2. Instalar no iPhone dela
 
-1. Abrir `https://gualmeidap.github.io/formatura-relatorios/` no **Safari** → Compartilhar → **Adicionar à Tela de Início**.
+1. Abrir `https://gualmeidap.github.io/tesouraria/` no **Safari** → Compartilhar → **Adicionar à Tela de Início**.
 2. Abrir o ícone "Tesouraria". Na primeira vez ele pede a **senha dos dados** (a `DATA_KEY` do `.env`). Fica salva no aparelho.
 3. Pronto: toda vez que abrir, ele busca a atualização mais recente publicada pelo robô. O selo **🤖 automático** e a data "Dados do Keeper: …" mostram de quando são os números. O botão **↻** força uma nova busca.
 
@@ -78,4 +83,5 @@ Se ela precisar de um número *de agora* (antes da atualização da noite): Keep
 - `sync/rodar.ps1` — roda o robô lendo o `.env` e publica o `dados.enc` no GitHub.
 - `.env` (não vai para o git) — `KEEPER_EMAIL`, `KEEPER_SENHA`, `DATA_KEY`; modelo em `.env.example`.
 - `dados.enc` — planilha criptografada publicada pelo robô.
+- `status.json` — última execução do robô (data, resultado, mensagem), publicado junto.
 - `exemplo - Vendas Parcelas Detalhado.xlsx` — export real de 21/09/2026, para testes manuais (não vai para o git).

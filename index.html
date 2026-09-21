@@ -459,7 +459,10 @@ function renderNav(){
 function renderMeta(){
   const d=DATA; const ref = d.geradoEm||d.carregadoEm; const idade = (Date.now()-ref.getTime())/36e5;
   $('#meta').innerHTML = `<span class="pill">Dados do Keeper: ${fmtDT(ref)}</span><span class="pill">${uniq(d.rows.filter(r=>r.sit!=='cancel').map(r=>r.key)).length} formandos</span>${d.arquivo==='atualização automática'?'<span class="pill">🤖 automático</span>':''}`;
-  $('#stale').innerHTML = idade>36 ? `<div class="stale noprint">⏰ <div>Estes dados têm ${Math.round(idade/24)} dias. Para números atualizados, baixe a planilha nova no Keeper e toque em <b>atualizar</b> (ícone ↻ no topo).</div></div>` : '';
+  const robo = roboTexto();
+  const falhou = ROBO && ROBO.resultado!=='ok';
+  $('#stale').innerHTML = (idade>36 ? `<div class="stale noprint">⏰ <div>Estes dados têm ${Math.round(idade/24)} dias. ${robo?'':'Para números atualizados, baixe a planilha nova no Keeper e toque em <b>atualizar</b> (ícone ↻ no topo).'}</div></div>` : '')
+    + (falhou ? `<div class="stale noprint" style="background:var(--crit-soft);color:var(--crit-ink)">🤖 <div>${robo}. O Gustavo precisa verificar o robô. Enquanto isso, dá para carregar a planilha manualmente em <b>Mais</b>.</div></div>` : '');
 }
 function renderFilterbar(){
   const p=filtrosAtivos();
@@ -517,8 +520,6 @@ function vInicio(rows){
     ${kpi('A vencer', fmtBRL(t.vencer), `${fmtN(t.nVencer)} parcelas futuras`, 'future')}
     ${kpi('Aguardando repasse', fmtBRL(t.repasse), `${t.nRepasse} parcela(s) no cartão · "A receber" no Keeper`, 'warn')}
   </div>
-  <div class="section-title"><h2>Respostas prontas para enviar</h2><span class="small muted">toque para copiar ou enviar</span></div>
-  <div class="qa">${qa.map((q,i)=>`<div class="card"><h3><span class="ic">${q.ic}</span>${q.t}</h3><div class="ans" id="qa${i}">${esc(q.a)}</div><div class="btns">${btn('soft',I.copy,'Copiar',`data-copy="qa${i}"`)}${btn('primary',I.share,'Enviar',`data-share="qa${i}"`)}</div></div>`).join('')}</div>
   <div class="section-title"><h2>Relatório completo</h2></div>
   <div class="card">
     <div class="small muted" style="margin-bottom:8px">Texto pronto para WhatsApp ou e-mail. Pode editar antes de enviar. Recorte atual: ${esc(filtrosTexto())}.</div>
@@ -532,7 +533,9 @@ function vInicio(rows){
     <tr class="total"><td>Total</td><td class="num">${t.alunosAtivos}</td><td class="num">${fmtBRL(t.liq)}</td><td class="num">${fmtBRL(t.pagoLiq)}</td><td class="num">${fmtBRL(t.atrasado)}</td><td class="num">${fmtPct(t.pctRecebido)}</td></tr>
   </table></div></div>
   <div class="section-title"><h2>Próximos meses</h2></div>
-  <div class="card tight">${chartMensal(rows, isMobile()?6:12)}</div>`;
+  <div class="card tight">${chartMensal(rows, isMobile()?6:12)}</div>
+  <div class="section-title"><h2>Respostas prontas para enviar</h2><span class="small muted">toque para copiar ou enviar</span></div>
+  <div class="qa">${qa.map((q,i)=>`<div class="card"><h3><span class="ic">${q.ic}</span>${q.t}</h3><div class="ans" id="qa${i}">${esc(q.a)}</div><div class="btns">${btn('soft',I.copy,'Copiar',`data-copy="qa${i}"`)}${btn('primary',I.share,'Enviar',`data-share="qa${i}"`)}</div></div>`).join('')}</div>`;
 }
 function textoAtraso(rows){
   const al = consolidar(rows).filter(a=>a.nAtrasado>0).sort((a,b)=>b.atrasado-a.atrasado);
@@ -708,7 +711,7 @@ function vMais(rows){
   const d=DATA;
   return `
   <div class="card tight"><div class="list">
-    <div class="item" id="mNovo"><div><div class="name">↻ Atualizar dados</div><div class="sub">Busca a atualização automática · atual: ${fmtDT(d.geradoEm||d.carregadoEm)}</div></div><div class="right muted">${I.chev}</div></div>
+    <div class="item" id="mNovo"><div><div class="name">↻ Atualizar dados</div><div class="sub">Busca a atualização automática · atual: ${fmtDT(d.geradoEm||d.carregadoEm)}${roboTexto()?'<br>'+roboTexto():''}</div></div><div class="right muted">${I.chev}</div></div>
     <div class="item" id="mArquivo"><div><div class="name">📂 Carregar planilha manualmente</div><div class="sub">Escolher um arquivo .xlsx baixado do Keeper</div></div><div class="right muted">${I.chev}</div></div>
     <div class="item" id="mGloss"><div><div class="name">📖 Glossário</div><div class="sub">O que significa cada número</div></div><div class="right muted">${I.chev}</div></div>
     <div class="item" id="mPrint"><div><div class="name">🖨️ Imprimir / salvar em PDF</div><div class="sub">Imprime a tela atual</div></div><div class="right muted">${I.chev}</div></div>
@@ -839,7 +842,15 @@ async function decryptEnc(buf, senha){
   const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:200000,hash:'SHA-256'}, km, {name:'AES-GCM',length:256}, false, ['decrypt']);
   return crypto.subtle.decrypt({name:'AES-GCM',iv}, key, ct);
 }
-let AUTO_OK=false;
+let AUTO_OK=false, ROBO=null;
+async function loadStatus(){
+  try{ const r=await fetch('status.json?t='+Date.now(),{cache:'no-store'}); if(r.ok){ ROBO=await r.json(); } }catch(e){}
+}
+function roboTexto(){
+  if(!ROBO||!ROBO.ultimaExecucao) return '';
+  const d=new Date(ROBO.ultimaExecucao); const ok=ROBO.resultado==='ok';
+  return `${ok?'✅':'❌'} Última execução do robô: ${fmtDT(d)} — ${ok?'sucesso':'falhou'}${ROBO.mensagem?' · '+esc(ROBO.mensagem):''}`;
+}
 function askKey(){
   return new Promise(res=>{
     $('#modalBox').innerHTML=`<div class="head"><div><h2>🔐 Senha dos dados</h2><div class="small muted">Os dados são atualizados automaticamente e ficam criptografados. Digite a senha combinada (só na primeira vez neste aparelho).</div></div></div>
@@ -853,6 +864,7 @@ function askKey(){
 async function autoLoad(manual){
   if(location.protocol==='file:' || !window.crypto?.subtle) return false;
   let r; try{ r=await fetch('dados.enc?t='+Date.now(),{cache:'no-store'}); }catch(e){ return false; }
+  loadStatus().then(()=>{ if(DATA) renderMeta(); });
   if(!r.ok) return false;
   AUTO_OK=true;
   const buf=await r.arrayBuffer();
