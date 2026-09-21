@@ -520,12 +520,6 @@ function vInicio(rows){
     ${kpi('A vencer', fmtBRL(t.vencer), `${fmtN(t.nVencer)} parcelas futuras`, 'future')}
     ${kpi('Aguardando repasse', fmtBRL(t.repasse), `${t.nRepasse} parcela(s) no cartão · "A receber" no Keeper`, 'warn')}
   </div>
-  <div class="section-title"><h2>Relatório completo</h2></div>
-  <div class="card">
-    <div class="small muted" style="margin-bottom:8px">Texto pronto para WhatsApp ou e-mail. Pode editar antes de enviar. Recorte atual: ${esc(filtrosTexto())}.</div>
-    <textarea id="txtGeral">${esc(textoGeral(rows))}</textarea>
-    <div class="btns" style="margin-top:10px">${btn('soft',I.copy,'Copiar',`id="copyGeral"`)}${btn('primary',I.share,'Enviar',`id="shareGeral"`)}${btn('',I.print,'PDF',`id="printGeral"`)}</div>
-  </div>
   <div class="section-title"><h2>Por lote</h2>${exportBtn('lote','')}</div>
   <div class="card tight"><div class="tablewrap"><table id="t-lote">
     <tr><th>Lote</th><th class="num">Formandos</th><th class="num">Previsto líq.</th><th class="num">Creditado</th><th class="num">Atrasado</th><th class="num">% receb.</th></tr>
@@ -535,7 +529,13 @@ function vInicio(rows){
   <div class="section-title"><h2>Próximos meses</h2></div>
   <div class="card tight">${chartMensal(rows, isMobile()?6:12)}</div>
   <div class="section-title"><h2>Respostas prontas para enviar</h2><span class="small muted">toque para copiar ou enviar</span></div>
-  <div class="qa">${qa.map((q,i)=>`<div class="card"><h3><span class="ic">${q.ic}</span>${q.t}</h3><div class="ans" id="qa${i}">${esc(q.a)}</div><div class="btns">${btn('soft',I.copy,'Copiar',`data-copy="qa${i}"`)}${btn('primary',I.share,'Enviar',`data-share="qa${i}"`)}</div></div>`).join('')}</div>`;
+  <div class="qa">${qa.map((q,i)=>`<div class="card"><h3><span class="ic">${q.ic}</span>${q.t}</h3><div class="ans" id="qa${i}">${esc(q.a)}</div><div class="btns">${btn('soft',I.copy,'Copiar',`data-copy="qa${i}"`)}${btn('primary',I.share,'Enviar',`data-share="qa${i}"`)}</div></div>`).join('')}</div>
+  <div class="section-title"><h2>Relatório completo</h2></div>
+  <div class="card">
+    <div class="small muted" style="margin-bottom:8px">Texto pronto para WhatsApp ou e-mail. Pode editar antes de enviar. Recorte atual: ${esc(filtrosTexto())}.</div>
+    <textarea id="txtGeral">${esc(textoGeral(rows))}</textarea>
+    <div class="btns" style="margin-top:10px">${btn('soft',I.copy,'Copiar',`id="copyGeral"`)}${btn('primary',I.share,'Enviar',`id="shareGeral"`)}${btn('',I.print,'PDF',`id="printGeral"`)}</div>
+  </div>`;
 }
 function textoAtraso(rows){
   const al = consolidar(rows).filter(a=>a.nAtrasado>0).sort((a,b)=>b.atrasado-a.atrasado);
