@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  segredos:
+    name: Varredura de segredos (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  testes:
+    name: Testes (robô + app)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Dependências
+        run: pip install -r sync/requirements.txt pytest
+      - name: Sintaxe do robô
+        run: python -m py_compile sync/sync.py
+      - name: Testes do robô e da criptografia
+        run: pytest -q tests
+      - name: Sintaxe e sanidade do app (index.html)
+        run: node tests/check_html.mjs
+      - name: dados.enc não pode estar em claro
+        run: |
+          if [ -f dados.enc ]; then
+            head -c 2 dados.enc | grep -q "PK" && { echo "dados.enc está em claro!"; exit 1; } || echo "dados.enc cifrado OK"
+          fi

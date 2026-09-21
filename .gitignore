@@ -7,3 +7,4 @@ __pycache__/
 .tmp/
 sync/ultimo-log.txt
 .venv/
+tests/.inline-*.js
