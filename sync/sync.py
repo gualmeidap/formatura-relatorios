@@ -78,9 +78,9 @@ def open_login_form(page):
 
 def login(page, email: str, senha: str):
     campo_email, campo_senha = open_login_form(page)
-    campo_email.click()
+    campo_email.focus()
     campo_email.press_sequentially(email, delay=20)
-    campo_senha.click()
+    campo_senha.focus()
     campo_senha.press_sequentially(senha, delay=20)
     time.sleep(0.5)
 
