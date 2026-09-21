@@ -96,6 +96,8 @@ def login(page, email: str, senha: str):
                 msg = ""
             respostas.append(f"{resp.status} {resp.url.split('.br')[-1]} {msg}")
     page.on("response", on_response)
+    page.on("request", lambda r: respostas.append(f"REQ {r.method} {r.url.split('.br')[-1]}") if "api.keeper" in r.url and re.search(r"auth|login", r.url) else None)
+    page.on("requestfailed", lambda r: respostas.append(f"FALHA {r.url.split('.br')[-1]} {r.failure}") if "api.keeper" in r.url else None)
 
     botao = page.locator("button[type='submit'], button", has_text=re.compile(r"entrar", re.I))
     if botao.count():
