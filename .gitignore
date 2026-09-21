@@ -6,3 +6,4 @@ __pycache__/
 .claude/
 .tmp/
 sync/ultimo-log.txt
+.venv/

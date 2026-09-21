@@ -28,7 +28,7 @@ As duas convivem: mesmo com o robô, o botão **Mais → Carregar planilha manua
 powershell -NoProfile -ExecutionPolicy Bypass -File sync/rodar.ps1
 ```
 
-Pré-requisitos (uma vez): `pip install -r sync/requirements.txt` e `python -m playwright install chromium`; `.env` preenchido (modelo em `.env.example`). O log fica em `sync/ultimo-log.txt`; se der erro no Keeper, ele salva `sync-erro.png` com a tela.
+Pré-requisitos (uma vez): `python -m venv .venv`, `.venvScriptspip install -r sync/requirements.txt` e `.venvScriptspython -m playwright install chromium` (o Chromium vai para `D:sistemasms-playwright` via variável `PLAYWRIGHT_BROWSERS_PATH`); `.env` preenchido (modelo em `.env.example`). O log fica em `sync/ultimo-log.txt`; se der erro no Keeper, ele salva `sync-erro.png` com a tela.
 
 ### Agendar toda noite (Agendador de Tarefas do Windows)
 

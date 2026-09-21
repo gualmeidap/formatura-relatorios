@@ -16,8 +16,13 @@ try {
         if ($_ -match '^\s*([A-Z_]+)\s*=\s*(.*?)\s*$') { [Environment]::SetEnvironmentVariable($Matches[1], $Matches[2], "Process") }
     }
 
+    # Chromium do Playwright e Python do ambiente virtual ficam no D:
+    if (-not $env:PLAYWRIGHT_BROWSERS_PATH) { $env:PLAYWRIGHT_BROWSERS_PATH = "D:\sistemas\ms-playwright" }
+    $py = Join-Path $root ".venv\Scripts\python.exe"
+    if (-not (Test-Path $py)) { $py = "python" }
+
     Write-Host "[$(Get-Date -Format 'dd/MM/yyyy HH:mm')] Baixando planilha do Keeper..."
-    python (Join-Path $PSScriptRoot "sync.py")
+    & $py (Join-Path $PSScriptRoot "sync.py")
     if ($LASTEXITCODE -ne 0) { throw "sync.py falhou (código $LASTEXITCODE)" }
 
     Write-Host "Publicando no GitHub..."
