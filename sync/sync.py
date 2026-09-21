@@ -78,15 +78,36 @@ def open_login_form(page):
 
 def login(page, email: str, senha: str):
     campo_email, campo_senha = open_login_form(page)
-    campo_email.fill(email)
-    campo_senha.fill(senha)
+    campo_email.click()
+    campo_email.press_sequentially(email, delay=20)
+    campo_senha.click()
+    campo_senha.press_sequentially(senha, delay=20)
+    time.sleep(0.5)
+
+    # Diagnóstico: registra status/mensagem das respostas de autenticação (sem tokens)
+    respostas = []
+    def on_response(resp):
+        if re.search(r"auth|login|session", resp.url, re.I) and "google" not in resp.url:
+            try:
+                corpo = resp.text()
+                m = re.search(r'"(message|detail|error)"\s*:\s*"([^"]{0,120})"', corpo)
+                msg = m.group(0) if m else ""
+            except Exception:
+                msg = ""
+            respostas.append(f"{resp.status} {resp.url.split('.br')[-1]} {msg}")
+    page.on("response", on_response)
+
     botao = page.locator("button[type='submit'], button", has_text=re.compile(r"entrar", re.I))
     if botao.count():
         botao.first.click()
     else:
         campo_senha.press("Enter")
-    # Logado quando o painel aparece (menu lateral / "Painel inicial")
-    page.get_by_text(re.compile(r"painel inicial", re.I)).first.wait_for(state="visible", timeout=45000)
+    try:
+        # Logado quando o painel aparece (menu lateral / "Painel inicial")
+        page.get_by_text(re.compile(r"painel inicial", re.I)).first.wait_for(state="visible", timeout=45000)
+    except PWTimeout:
+        avisos = page.evaluate("""() => [...document.querySelectorAll('snack-bar-container, mat-snack-bar-container, simple-snack-bar, .mat-mdc-snack-bar-label, mat-error, .alert, .error, .toast')].map(e => e.innerText.trim()).filter(Boolean)""")
+        raise RuntimeError(f"login não avançou. respostas={respostas} avisos={avisos} url={page.url}")
     page.wait_for_load_state("networkidle")
     dismiss_popups(page)
 
