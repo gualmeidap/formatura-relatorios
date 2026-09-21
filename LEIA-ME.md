@@ -28,12 +28,12 @@ As duas convivem: mesmo com o robô, o botão **Mais → Carregar planilha manua
 powershell -NoProfile -ExecutionPolicy Bypass -File sync/rodar.ps1
 ```
 
-Pré-requisitos (uma vez): `python -m venv .venv`, `.venvScriptspip install -r sync/requirements.txt` e `.venvScriptspython -m playwright install chromium` (o Chromium vai para `D:sistemasms-playwright` via variável `PLAYWRIGHT_BROWSERS_PATH`); `.env` preenchido (modelo em `.env.example`). O log fica em `sync/ultimo-log.txt`; se der erro no Keeper, ele salva `sync-erro.png` com a tela.
+Pré-requisitos (já feitos neste PC): ambiente virtual em `.venv` (`python -m venv .venv` + `.venv\Scripts\pip install -r sync/requirements.txt`), Chromium do Playwright em `D:\sistemas\ms-playwright` (variável de usuário `PLAYWRIGHT_BROWSERS_PATH`; para reinstalar: `.venv\Scripts\python -m playwright install chromium`); `.env` preenchido (modelo em `.env.example`). O log fica em `sync/ultimo-log.txt`; se der erro no Keeper, ele salva `sync-erro.png` com a tela.
 
 ### Agendar toda noite (Agendador de Tarefas do Windows)
 
 ```bash
-schtasks /create /tn "Formatura - sync Keeper" /sc daily /st 23:30 /tr "powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\Gustavo\formatura-relatorios\sync\rodar.ps1" /f
+schtasks /create /tn "Formatura - sync Keeper" /sc daily /st 23:30 /tr "powershell -NoProfile -ExecutionPolicy Bypass -File D:\sistemas\formatura-relatorios\sync\rodar.ps1" /f
 ```
 
 O PC precisa estar ligado (pode estar bloqueado) às 23:30. Para rodar também sempre que você fizer login no Windows (cobre dias em que o PC ficou desligado), crie uma segunda tarefa trocando `/sc daily /st 23:30` por `/sc onlogon`. Para remover: `schtasks /delete /tn "Formatura - sync Keeper" /f`.
