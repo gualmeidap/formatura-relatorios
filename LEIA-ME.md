@@ -41,7 +41,9 @@ O PC precisa estar ligado (pode estar bloqueado) às 23:30.
 **Histórico das execuções** — três lugares para conferir:
 - no app, aba **Mais** → "Última execução do robô: data — sucesso/falhou" (vem do `status.json`, publicado a cada rodada, inclusive nas que falham; se falhou, a tela inicial mostra um aviso vermelho);
 - no GitHub, [histórico de commits](https://github.com/gualmeidap/tesouraria/commits/main): cada rodada vira um commit `dados: …` (sucesso) ou `robô falhou: …`;
-- no PC, `sync/ultimo-log.txt` com o log completo da última rodada. Para rodar também sempre que você fizer login no Windows (cobre dias em que o PC ficou desligado), crie uma segunda tarefa trocando `/sc daily /st 23:30` por `/sc onlogon`. Para remover: `schtasks /delete /tn "Formatura - sync Keeper" /f`.
+- no PC, `sync/ultimo-log.txt` com o log completo da última rodada.
+
+Para rodar também sempre que você fizer login no Windows (cobre dias em que o PC ficou desligado), crie uma segunda tarefa trocando `/sc daily /st 23:30` por `/sc onlogon`. Para remover: `schtasks /delete /tn "Formatura - sync Keeper" /f`.
 
 ---
 
