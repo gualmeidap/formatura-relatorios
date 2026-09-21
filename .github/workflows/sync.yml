@@ -1,0 +1,51 @@
+name: Atualizar dados do Keeper
+
+on:
+  schedule:
+    - cron: "0 3 * * *"      # 03:00 UTC = 00:00 em Brasília, todo dia
+  workflow_dispatch:         # botão "Run workflow" para rodar na hora
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependências
+        run: |
+          pip install -r sync/requirements.txt
+          playwright install --with-deps chromium
+
+      - name: Baixar e criptografar planilha
+        env:
+          KEEPER_EMAIL: ${{ secrets.KEEPER_EMAIL }}
+          KEEPER_SENHA: ${{ secrets.KEEPER_SENHA }}
+          DATA_KEY: ${{ secrets.DATA_KEY }}
+        run: python sync/sync.py
+
+      - name: Publicar dados.enc
+        run: |
+          git config user.name "robo-keeper"
+          git config user.email "robo-keeper@users.noreply.github.com"
+          git add dados.enc
+          git diff --cached --quiet && echo "Sem mudanças" || git commit -m "dados: $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git push
+
+      - name: Guardar captura em caso de erro
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sync-erro
+          path: sync-erro.png
+          if-no-files-found: ignore

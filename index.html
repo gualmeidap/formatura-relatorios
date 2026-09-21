@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#7b2d8e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tesouraria">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Tesouraria da Formatura</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%237b2d8e'/%3E%3Ctext x='32' y='44' font-size='36' font-family='Arial' font-weight='700' fill='white' text-anchor='middle'%3E$%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' fill='%237b2d8e'/%3E%3Ctext x='90' y='122' font-size='100' font-family='Arial' font-weight='700' fill='white' text-anchor='middle'%3E$%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    color-scheme:light;
+    --bg:#f4f2f7; --surface:#ffffff; --line:#e9e5ef; --line2:#d9d3e3; --ink:#1c1726; --ink2:#5a5468; --muted:#8d879a;
+    --brand:#7b2d8e; --brand2:#c2377b; --brand-soft:#f4e9f6; --brand-ink:#5e1f6e;
+    --good:#0f9d58; --good-soft:#e6f5ec; --good-ink:#0b6e3d;
+    --warn:#e0940c; --warn-soft:#fff3dc; --warn-ink:#8a5600;
+    --crit:#d4373f; --crit-soft:#fce9ea; --crit-ink:#a3262c;
+    --future:#2f6fd6; --future-soft:#e8f0fc; --future-ink:#1f4f9e;
+    --cancel:#8d879a; --cancel-soft:#efedf2;
+    --r:16px; --r2:12px; --sh:0 1px 2px rgba(28,23,38,.05),0 4px 14px rgba(28,23,38,.05);
+    --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Inter,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding-bottom:calc(72px + var(--sab))}
+  h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.015em}
+  h1{font-size:22px} h2{font-size:16px} h3{font-size:14px}
+  a{color:var(--brand)}
+  button,select,input,textarea{font:inherit;color:inherit}
+  button{cursor:pointer;border:1px solid var(--line2);background:var(--surface);border-radius:999px;padding:8px 14px;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:6px;line-height:1;white-space:nowrap}
+  button:active{transform:scale(.97)}
+  button.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+  button.ghost{background:transparent;border-color:rgba(255,255,255,.35);color:#fff}
+  button.soft{background:var(--brand-soft);border-color:transparent;color:var(--brand-ink)}
+  button.icon{padding:8px;width:36px;height:36px;justify-content:center}
+  button svg{width:16px;height:16px;flex:none}
+  input[type=text],input[type=date],input[type=search],select{border:1px solid var(--line2);border-radius:10px;padding:9px 11px;background:var(--surface);min-width:0;width:100%;-webkit-appearance:none;appearance:none}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 14px}
+  .muted{color:var(--muted)} .small{font-size:12px} .num{font-variant-numeric:tabular-nums} .nowrap{white-space:nowrap}
+  .hide{display:none!important}
+
+  /* ---- hero ---- */
+  .hero{background:linear-gradient(135deg,var(--brand) 0%,var(--brand2) 100%);color:#fff;padding:calc(14px + var(--sat)) 0 54px;position:relative}
+  .hero .wrap{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .hero .t{min-width:0}
+  .hero .kicker{font-size:12px;opacity:.85;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+  .hero h1{margin-top:2px}
+  .hero .meta{margin-top:6px;font-size:12px;opacity:.95;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .pill{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.18);border-radius:999px;padding:3px 9px;font-weight:600}
+  .hero .actions{display:flex;gap:6px;flex:none}
+
+  /* ---- content ---- */
+  main{margin-top:-40px;position:relative}
+  .stack>*+*{margin-top:12px}
+  .card{background:var(--surface);border-radius:var(--r);box-shadow:var(--sh);padding:16px}
+  .card.tight{padding:0;overflow:hidden}
+  .card .head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 16px;flex-wrap:wrap}
+  .card .head .sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:22px 0 10px;padding:0 2px;flex-wrap:wrap}
+  .section-title h2{color:var(--ink2);text-transform:uppercase;letter-spacing:.06em;font-size:12px}
+
+  /* KPIs */
+  .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  @media(min-width:760px){.kpis{grid-template-columns:repeat(4,1fr)}}
+  .kpi{background:var(--surface);border-radius:var(--r2);box-shadow:var(--sh);padding:12px 14px;position:relative;overflow:hidden}
+  .kpi:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c,var(--brand))}
+  .kpi .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
+  .kpi .val{font-size:20px;font-weight:800;margin-top:3px;letter-spacing:-.02em;color:var(--c,var(--ink));font-variant-numeric:tabular-nums}
+  .kpi .sub{font-size:11.5px;color:var(--ink2);margin-top:3px}
+  .kpi.good{--c:var(--good)} .kpi.crit{--c:var(--crit)} .kpi.future{--c:var(--future)} .kpi.warn{--c:var(--warn)} .kpi.brand{--c:var(--brand)} .kpi.plain{--c:var(--line2)}
+  .kpi.plain .val{color:var(--ink)}
+
+  /* hero summary card */
+  .summary{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center}
+  .ring{width:96px;height:96px;position:relative;flex:none}
+  .ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .ring .c{position:absolute;inset:0;display:grid;place-items:center;text-align:center;font-weight:800;font-size:18px;letter-spacing:-.02em;line-height:1.1}
+  .ring .c small{display:block;font-size:9.5px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-top:2px}
+  .summary .big{font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--good)}
+  .summary .of{font-size:13px;color:var(--ink2)}
+  .segbar{display:flex;height:10px;border-radius:6px;overflow:hidden;background:var(--line);margin-top:12px;gap:2px}
+  .segbar i{display:block;height:100%}
+  .seglegend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:12px;color:var(--ink2)}
+  .seglegend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+
+  /* quick answers */
+  .qa{display:grid;gap:10px}
+  @media(min-width:760px){.qa{grid-template-columns:repeat(2,1fr)}}
+  .qa .card{padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+  .qa h3{color:var(--brand-ink);display:flex;align-items:center;gap:8px}
+  .qa h3 .ic{width:28px;height:28px;border-radius:8px;background:var(--brand-soft);display:grid;place-items:center;flex:none}
+  .qa h3 .ic svg{width:15px;height:15px}
+  .qa .ans{white-space:pre-wrap;font-size:13.5px;color:var(--ink2);line-height:1.5}
+  .qa .btns{margin-top:auto;padding-top:4px}
+  .btns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+
+  /* lists (mobile-first) */
+  .list{display:flex;flex-direction:column}
+  .item{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:12px 16px;border-top:1px solid var(--line);align-items:center;cursor:pointer}
+  .item:first-child{border-top:0}
+  .item:active{background:var(--brand-soft)}
+  .item .name{font-weight:600;font-size:14px}
+  .item .sub{font-size:12px;color:var(--muted)}
+  .item .right{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+  .item .right .sub{font-weight:500}
+  .item .bar{grid-column:1/-1}
+  .bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:4px}
+  .bar i{display:block;height:100%;background:var(--good)}
+  .empty{padding:34px 16px;text-align:center;color:var(--muted)}
+  .empty b{display:block;font-size:26px;margin-bottom:6px}
+
+  /* tables */
+  .tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;vertical-align:middle}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:#faf9fc;position:sticky;top:0;cursor:pointer;user-select:none;font-weight:700}
+  th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}
+  tr.total td{font-weight:700;background:#faf9fc}
+  tr.click{cursor:pointer} tr.click:hover td{background:var(--brand-soft)}
+  tr.now td{background:#fbf5fc}
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+  .badge:before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.8}
+  .b-pago{background:var(--good-soft);color:var(--good-ink)} .b-repasse{background:var(--warn-soft);color:var(--warn-ink)} .b-vencer{background:var(--future-soft);color:var(--future-ink)}
+  .b-atrasado{background:var(--crit-soft);color:var(--crit-ink)} .b-cancel{background:var(--cancel-soft);color:var(--ink2)} .b-quitado{background:var(--good-soft);color:var(--good-ink)} .b-dia{background:var(--future-soft);color:var(--future-ink)}
+
+  /* chart */
+  .chart{width:100%;height:auto;display:block}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--ink2);padding:6px 16px 14px}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+  .tip{position:fixed;pointer-events:none;background:var(--ink);color:#fff;padding:6px 9px;border-radius:8px;font-size:12px;z-index:50;display:none;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+
+  /* nav */
+  .topnav{display:none;gap:4px;margin:0 0 14px;background:var(--surface);border-radius:999px;padding:4px;box-shadow:var(--sh)}
+  .topnav button{border:0;background:none;border-radius:999px;color:var(--ink2);padding:8px 14px}
+  .topnav button.on{background:var(--brand);color:#fff}
+  .bottomnav{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:6px 4px calc(6px + var(--sab));z-index:30}
+  .bottomnav button{border:0;background:none;border-radius:10px;flex-direction:column;gap:3px;padding:4px 6px;color:var(--muted);font-size:10.5px;font-weight:600;min-width:52px}
+  .bottomnav button svg{width:22px;height:22px}
+  .bottomnav button.on{color:var(--brand)}
+  @media(min-width:760px){.topnav{display:flex} .bottomnav{display:none} body{padding-bottom:40px}}
+
+  /* filters sheet */
+  .scrim{position:fixed;inset:0;background:rgba(28,23,38,.45);z-index:40;display:none}
+  .scrim.on{display:block}
+  .sheet{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-radius:20px 20px 0 0;z-index:41;transform:translateY(105%);transition:transform .25s ease;max-height:88vh;overflow:auto;padding:12px 16px calc(16px + var(--sab))}
+  .sheet.on{transform:none}
+  .sheet .grab{width:38px;height:4px;border-radius:2px;background:var(--line2);margin:0 auto 10px}
+  .sheet .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .f{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--ink2);margin-top:12px}
+  .f>span{font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:11px}
+  .frow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{border:1px solid var(--line2);border-radius:999px;padding:6px 12px;font-size:12.5px;background:var(--surface);cursor:pointer;user-select:none;font-weight:500}
+  .chip.on{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+  .sheet .foot{display:flex;gap:8px;margin-top:16px;position:sticky;bottom:0;background:var(--surface);padding-top:8px}
+  .sheet .foot button{flex:1;justify-content:center;padding:11px}
+  @media(min-width:760px){
+    .sheet{left:auto;right:16px;top:16px;bottom:auto;width:420px;border-radius:var(--r);max-height:calc(100vh - 32px);transform:translateX(120%);box-shadow:0 12px 40px rgba(0,0,0,.2)}
+    .sheet.on{transform:none}
+  }
+  .filterbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--ink2);margin-bottom:12px}
+  .filterbar .fchip{background:var(--surface);border-radius:999px;padding:5px 10px;box-shadow:var(--sh);font-weight:500}
+  .filterbar .fchip b{color:var(--brand-ink)}
+
+  /* modal */
+  .modal{position:fixed;inset:0;background:rgba(28,23,38,.5);display:none;align-items:flex-end;justify-content:center;z-index:45}
+  .modal.on{display:flex}
+  .modal .box{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-height:92vh;overflow:auto;padding:14px 16px calc(20px + var(--sab))}
+  .modal .box .head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px;padding:0}
+  @media(min-width:760px){.modal{align-items:center;padding:20px} .modal .box{border-radius:var(--r);max-width:960px;padding:20px}}
+  .gloss dt{font-weight:700;margin-top:12px} .gloss dd{margin:2px 0 0;color:var(--ink2);font-size:13.5px}
+  textarea{width:100%;min-height:220px;border:1px solid var(--line2);border-radius:12px;padding:12px;font:13.5px/1.5 Inter,inherit;resize:vertical;background:#fbfafc}
+  .toast{position:fixed;bottom:calc(84px + var(--sab));left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:999px;font-size:13px;display:none;z-index:60;font-weight:600;white-space:nowrap}
+  @media(min-width:760px){.toast{bottom:24px}}
+
+  /* upload */
+  .drop{border:2px dashed var(--line2);border-radius:var(--r);background:var(--surface);padding:26px 18px;text-align:center;color:var(--ink2);transition:.15s}
+  .drop.over{border-color:var(--brand);background:var(--brand-soft)}
+  .drop input{display:none}
+  .drop .big{font-size:40px;line-height:1}
+  .steps{display:grid;gap:8px;margin-top:16px;text-align:left}
+  @media(min-width:760px){.steps{grid-template-columns:repeat(3,1fr)}}
+  .steps div{background:var(--bg);border-radius:12px;padding:12px 14px;font-size:13px;display:flex;gap:10px}
+  .steps b{color:#fff;background:var(--brand);width:22px;height:22px;border-radius:50%;display:grid;place-items:center;flex:none;font-size:12px}
+  .stale{background:var(--warn-soft);color:var(--warn-ink);border-radius:12px;padding:10px 14px;font-size:13px;display:flex;gap:8px;align-items:center;margin-bottom:12px}
+
+  @media print{
+    body{background:#fff;padding:0} .hero{background:#fff;color:#000;padding:10px 0} .hero .actions,.topnav,.bottomnav,.filterbar button,.btns,.noprint{display:none!important}
+    main{margin-top:0} .card,.kpi{box-shadow:none;border:1px solid #ddd;break-inside:avoid} th{position:static}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="t">
+      <div class="kicker">Tesouraria · Comissão de Formatura</div>
+      <h1 id="titulo">Relatórios de cobrança</h1>
+      <div class="meta" id="meta"><span class="pill">Nenhuma planilha carregada</span></div>
+    </div>
+    <div class="actions noprint">
+      <button class="ghost icon" id="btnFiltros" title="Filtros" aria-label="Filtros"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18M6 12h12M10 19h4"/></svg></button>
+      <button class="ghost icon" id="btnNovo" title="Atualizar dados (carregar planilha nova)" aria-label="Atualizar dados"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="upload" class="stack">
+    <div class="drop" id="drop">
+      <input type="file" id="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+      <div class="big">📊</div>
+      <div style="margin-top:8px"><strong>Carregue a planilha do Keeper</strong></div>
+      <div class="small muted" style="margin-top:4px">Arquivo "Vendas Parcelas Detalhado" (.xlsx). Tudo fica só neste aparelho — nada é enviado para a internet.</div>
+      <div class="small muted" id="autoHint" style="margin-top:4px"></div>
+      <div style="margin-top:14px"><button class="primary" id="pick">Escolher arquivo</button></div>
+      <div class="steps">
+        <div><b>1</b><div>No Keeper: menu ☰ → <em>Relatórios</em> → <em>Vendas</em></div></div>
+        <div><b>2</b><div>Na caixa "Relatórios" escolha <em>Vendas Parcelas Detalhado</em> e toque em <em>Baixar</em></div></div>
+        <div><b>3</b><div>Volte aqui e escolha o arquivo baixado. Os relatórios ficam salvos neste aparelho até a próxima atualização.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="app" class="hide">
+    <nav class="topnav noprint" id="topnav"></nav>
+    <div class="filterbar noprint" id="filterbar"></div>
+    <div id="stale"></div>
+    <div id="view" class="stack"></div>
+  </div>
+</main>
+
+<nav class="bottomnav noprint" id="bottomnav"></nav>
+
+<div class="scrim" id="scrim"></div>
+<aside class="sheet" id="sheet" aria-label="Filtros">
+  <div class="grab"></div>
+  <div class="head"><h2>Filtros</h2><button class="icon" id="closeSheet" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="f"><span>Período</span>
+    <div class="chips" id="atalhos">
+      <span class="chip" data-r="tudo">Tudo</span><span class="chip" data-r="mes">Este mês</span><span class="chip" data-r="mesant">Mês passado</span><span class="chip" data-r="prox">Próximo mês</span><span class="chip" data-r="ate">Até hoje</span><span class="chip" data-r="ano">Este ano</span>
+    </div>
+    <div class="frow" style="margin-top:6px"><div><div class="small muted">De</div><input type="date" id="fDe"></div><div><div class="small muted">Até</div><input type="date" id="fAte"></div></div>
+    <select id="fTipoData" style="margin-top:6px"><option value="venc">Considerar data de vencimento</option><option value="pag">Considerar data de pagamento</option><option value="none">Sem filtro de data</option></select>
+  </div>
+  <div class="f"><span>Formando(a)</span><input type="search" id="fAluno" placeholder="nome, CPF ou e-mail"></div>
+  <div class="f"><span>Lote / pacote</span><div class="chips" id="fPacote"></div></div>
+  <div class="f"><span>Situação da parcela</span><div class="chips" id="fStatus"></div></div>
+  <div class="f"><span>Forma de pagamento</span><div class="chips" id="fForma"></div></div>
+  <div class="foot"><button id="btnLimpar">Limpar</button><button class="primary" id="btnAplicar">Ver resultados</button></div>
+</aside>
+
+<div class="tip" id="tip"></div>
+<div class="modal" id="modal"><div class="box" id="modalBox"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================== utilitários ===================== */
+const $ = s => document.querySelector(s);
+const fmtBRL = v => (v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const fmtN = v => (v||0).toLocaleString('pt-BR');
+const fmtK = v => v>=1000 ? (v/1000).toLocaleString('pt-BR',{maximumFractionDigits:v>=10000?0:1})+' mil' : fmtN(Math.round(v));
+const fmtPct = v => (isFinite(v)?v:0).toLocaleString('pt-BR',{style:'percent',minimumFractionDigits:1,maximumFractionDigits:1});
+const fmtD = d => d ? d.toLocaleDateString('pt-BR') : '—';
+const fmtDs = d => d ? d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : '—';
+const fmtDT = d => d ? d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '—';
+const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const MESES_L = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const ymKey = d => d ? d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0') : null;
+const ymLabel = k => { if(!k) return '—'; const [y,m]=k.split('-'); return MESES[+m-1]+'/'+y.slice(2); };
+const ymLabelL = k => { const [y,m]=k.split('-'); return MESES_L[+m-1]+' de '+y; };
+const isoDate = d => d ? d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') : '';
+const parseISO = s => { if(!s) return null; const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); };
+const hoje = () => { const d=new Date(); d.setHours(0,0,0,0); return d; };
+const esc = s => String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sum = (arr,f) => arr.reduce((a,x)=>a+(f(x)||0),0);
+const uniq = arr => [...new Set(arr)];
+const toast = m => { const t=$('#toast'); t.textContent=m; t.style.display='block'; clearTimeout(t._h); t._h=setTimeout(()=>t.style.display='none',2200); };
+const copy = async (txt) => { try{ await navigator.clipboard.writeText(txt); toast('Copiado! Agora é só colar.'); } catch(e){ const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('Copiado!'); } };
+const share = async (txt, titulo) => { if(navigator.share){ try{ await navigator.share({title:titulo||'Relatório da formatura', text:txt}); return; }catch(e){ if(e.name==='AbortError') return; } } window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank'); };
+const fixTxt = s => String(s??'').replace(/Ades[�?]o/g,'Adesão').replace(/(\d)[�?] Lote/g,'$1º Lote').replace(/CART[�?]O DE CR[�?]DITO/g,'CARTÃO DE CRÉDITO').replace(/[�]/g,'');
+const nice = s => ({'BOLETO':'Boleto','PIX':'Pix','ASSINATURA':'Assinatura (cartão recorrente)','CARTÃO DE CRÉDITO':'Cartão de crédito'})[s] || s;
+const niceS = s => ({'BOLETO':'Boleto','PIX':'Pix','ASSINATURA':'Assinatura','CARTÃO DE CRÉDITO':'Cartão'})[s] || s;
+const loteCurto = s => { const m=String(s).match(/(\d)[º°]\s*Lote/); return m? m[1]+'º Lote' : s; };
+const fmtCPF = c => { c=String(c||'').replace(/\D/g,''); if(!c) return ''; c=c.padStart(11,'0'); return c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4'); };
+const toDate = v => { if(!v) return null; if(v instanceof Date) return isNaN(v)?null:new Date(v.getFullYear(),v.getMonth(),v.getDate(),v.getHours(),v.getMinutes(),v.getSeconds()); if(typeof v==='number'){ const d=XLSX.SSF.parse_date_code(v); return d? new Date(d.y,d.m-1,d.d,d.H,d.M,d.S):null; } const m=String(v).match(/(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?/); if(m) return new Date(+m[3],+m[2]-1,+m[1],+(m[4]||0),+(m[5]||0)); const d=new Date(v); return isNaN(d)?null:d; };
+const num = v => { if(v==null||v==='') return 0; if(typeof v==='number') return v; const s=String(v).replace(/[R$\s.]/g,'').replace(',','.'); const n=parseFloat(s); return isNaN(n)?0:n; };
+const isMobile = () => window.matchMedia('(max-width:759px)').matches;
+const I = {
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2z"/></svg>',
+  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+  alert:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/></svg>',
+  users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-5-6.7"/></svg>',
+  list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
+  more:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>',
+  copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',
+  share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M12 15V3M7 8l5-5 5 5"/></svg>',
+  xls:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>',
+  money:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>',
+  pct:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5L5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/></svg>',
+  chev:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
+  print:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/></svg>',
+  filter:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18M6 12h12M10 19h4"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+};
+
+/* ===================== estado ===================== */
+let DATA = null, F = null, TAB = 'inicio', SORT = {};
+const SIT = { pago:'Pago (creditado)', repasse:'Pago (aguardando repasse)', vencer:'A vencer', atrasado:'Atrasado', cancel:'Cancelada' };
+const SIT_S = { pago:'Creditado', repasse:'Aguard. repasse', vencer:'A vencer', atrasado:'Atrasado', cancel:'Cancelada' };
+const SIT_ORDER = ['pago','repasse','vencer','atrasado','cancel'];
+const SIT_CLASS = { pago:'b-pago', repasse:'b-repasse', vencer:'b-vencer', atrasado:'b-atrasado', cancel:'b-cancel' };
+const SIT_COLOR = { pago:'#0f9d58', repasse:'#e0940c', vencer:'#2f6fd6', atrasado:'#d4373f', cancel:'#8d879a' };
+const TABS = [['inicio','Início',I.home],['mensal','Mensal',I.cal],['atraso','Atrasos',I.alert],['alunos','Formandos',I.users],['parcelas','Parcelas',I.list],['mais','Mais',I.more]];
+
+/* ===================== leitura da planilha ===================== */
+function parseWorkbook(wb, nomeArquivo){
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const aoa = XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
+  let hi = aoa.findIndex(r => r && String(r[0]).trim()==='#');
+  if(hi<0) throw new Error('Não encontrei o cabeçalho da planilha. Confira se é o arquivo "Vendas Parcelas Detalhado" exportado do Keeper.');
+  const norm = h => String(h??'').toLowerCase().replace(/[�?]/g,'').replace(/[áàãâ]/g,'a').replace(/[éê]/g,'e').replace(/í/g,'i').replace(/[óôõ]/g,'o').replace(/ú/g,'u').replace(/ç/g,'c').replace(/[^a-z0-9 ]/g,'').trim();
+  const H = aoa[hi].map(norm); const idx = p => H.findIndex(p);
+  const C = { aluno: idx(h=>h.startsWith('aluna')), cpf: idx(h=>h.startsWith('documento')), email: idx(h=>h==='email'), aderido: idx(h=>h.startsWith('aderido')),
+    compra: idx(h=>h.startsWith('nome da compra')), pacote: idx(h=>h.startsWith('pacote')), statusCompra: idx(h=>h.startsWith('status da compra')),
+    n: idx(h=>/parcela/.test(h) && !/status|valor|vencimento/.test(h)), status: idx(h=>h.startsWith('status parcela')), forma: idx(h=>h.startsWith('forma')),
+    valor: idx(h=>h==='valor parcela'), venc: idx(h=>h.startsWith('vencimento')), pag: idx(h=>h.startsWith('data pagamento')), conc: idx(h=>h.startsWith('data concilia')),
+    pago: idx(h=>h==='valor pago'), tarifa: idx(h=>h.startsWith('tarifa prevista')), antecip: idx(h=>h.startsWith('tarifa antecipa')), keeper: idx(h=>h.startsWith('taxa keeper')),
+    previsto: idx(h=>h==='valor previsto'), juros: idx(h=>h.startsWith('juros')), pagoLiq: idx(h=>h.startsWith('valor pago l')) };
+  const faltando = ['aluno','status','valor','venc','previsto','pagoLiq'].filter(k=>C[k]<0);
+  if(faltando.length) throw new Error('Colunas não encontradas: '+faltando.join(', ')+'. Confira se é o arquivo "Vendas Parcelas Detalhado".');
+  const g = (r,k) => C[k]>=0 ? r[C[k]] : null;
+  const rows = [];
+  for(let i=hi+1;i<aoa.length;i++){
+    const r = aoa[i]; if(!r || r[C.aluno]==null || String(r[C.aluno]).trim()==='') continue;
+    const row = { aluno: fixTxt(g(r,'aluno')).trim(), cpf: String(g(r,'cpf')||'').replace(/\D/g,''), email: String(g(r,'email')||'').trim(), aderidoEm: toDate(g(r,'aderido')),
+      pacote: fixTxt(g(r,'pacote')||g(r,'compra')), statusCompra: fixTxt(g(r,'statusCompra')), n: num(g(r,'n')), status: fixTxt(g(r,'status')).trim(), forma: fixTxt(g(r,'forma')).trim().toUpperCase(),
+      valor: num(g(r,'valor')), venc: toDate(g(r,'venc')), pag: toDate(g(r,'pag')), conc: toDate(g(r,'conc')), pago: num(g(r,'pago')), tarifa: num(g(r,'tarifa')), antecip: num(g(r,'antecip')), keeper: num(g(r,'keeper')),
+      previsto: num(g(r,'previsto')), juros: num(g(r,'juros')), pagoLiq: num(g(r,'pagoLiq')) };
+    derive(row); rows.push(row);
+  }
+  let geradoEm = null;
+  for(let i=0;i<hi;i++){ const r=aoa[i]||[]; const j=r.findIndex(c=>/gerado em/i.test(String(c))); if(j>=0){ geradoEm = toDate(r[j+1]); break; } }
+  rows.sort((a,b)=> a.aluno.localeCompare(b.aluno,'pt-BR') || a.n-b.n);
+  return { rows, geradoEm, arquivo: nomeArquivo, carregadoEm: new Date() };
+}
+function derive(row){
+  row.taxas = row.tarifa + row.antecip + row.keeper;
+  const s = row.status.toLowerCase();
+  if(s.startsWith('cancel')) row.sit='cancel';
+  else if(s.startsWith('pago')) row.sit = row.pagoLiq>0 ? 'pago' : 'repasse';
+  else if(s.startsWith('atras')||s.includes('venci')||s.includes('falha')) row.sit='atrasado';
+  else row.sit='vencer';
+  row.mesVenc = ymKey(row.venc); row.mesPag = ymKey(row.pag);
+  row.diasAtraso = (row.sit==='atrasado' && row.venc) ? Math.max(0,Math.round((hoje()-row.venc)/86400000)) : 0;
+  row.key = row.cpf || row.aluno.toLowerCase();
+}
+
+/* ---- persistência compacta (fica só neste aparelho) ---- */
+const RK = ['aluno','cpf','email','aderidoEm','pacote','statusCompra','n','status','forma','valor','venc','pag','conc','pago','tarifa','antecip','keeper','previsto','juros','pagoLiq'];
+const DK = new Set(['aderidoEm','venc','pag','conc']);
+function saveLocal(d){ try{ localStorage.setItem('keeperData', JSON.stringify({ geradoEm:d.geradoEm, arquivo:d.arquivo, carregadoEm:d.carregadoEm, k:RK, rows:d.rows.map(r=>RK.map(k=>DK.has(k)?(r[k]?r[k].getTime():null):r[k])) })); }catch(e){ console.warn('sem cache local',e); } }
+function loadLocal(){ try{ const c=JSON.parse(localStorage.getItem('keeperData')||'null'); if(!c||!c.rows) return null; const rows=c.rows.map(a=>{ const r={}; c.k.forEach((k,i)=>{ r[k]=DK.has(k)?(a[i]?new Date(a[i]):null):a[i]; }); derive(r); return r; }); return { rows, geradoEm:c.geradoEm?new Date(c.geradoEm):null, arquivo:c.arquivo, carregadoEm:c.carregadoEm?new Date(c.carregadoEm):new Date() }; }catch(e){ console.warn(e); return null; } }
+
+/* ===================== cálculo ===================== */
+function consolidar(rows){
+  const map = new Map();
+  for(const r of rows){
+    if(!map.has(r.key)) map.set(r.key,{ key:r.key, aluno:r.aluno, cpf:r.cpf, email:r.email, aderidoEm:r.aderidoEm, pacote:r.pacote, formas:new Set(), parcelas:[], nTotal:0,
+      totalBruto:0,totalLiq:0,pagoBruto:0,pagoLiq:0,repasse:0,vencer:0,atrasado:0,cancel:0,nPago:0,nRepasse:0,nVencer:0,nAtrasado:0,nCancel:0,juros:0,taxasPagas:0,maxAtraso:0,proxVenc:null,primVenc:null });
+    const a = map.get(r.key);
+    a.parcelas.push(r); a.formas.add(r.forma); if(r.aderidoEm && !a.aderidoEm) a.aderidoEm=r.aderidoEm;
+    if(r.sit==='cancel'){ a.cancel+=r.valor; a.nCancel++; continue; }
+    a.nTotal++; a.totalBruto+=r.valor; a.totalLiq+=r.previsto || (r.valor-r.taxas); if(r.venc && (!a.primVenc||r.venc<a.primVenc)) a.primVenc=r.venc;
+    if(r.sit==='pago'){ a.pagoBruto+=r.pago; a.pagoLiq+=r.pagoLiq; a.nPago++; a.juros+=r.juros; a.taxasPagas+=r.taxas; }
+    else if(r.sit==='repasse'){ a.pagoBruto+=r.pago; a.repasse+=r.previsto||r.valor; a.nRepasse++; }
+    else if(r.sit==='vencer'){ a.vencer+=r.previsto||r.valor; a.nVencer++; if(r.venc && (!a.proxVenc||r.venc<a.proxVenc)) a.proxVenc=r.venc; }
+    else if(r.sit==='atrasado'){ a.atrasado+=r.valor; a.nAtrasado++; a.maxAtraso=Math.max(a.maxAtraso,r.diasAtraso); }
+  }
+  for(const a of map.values()){
+    a.pctPago = a.nTotal? (a.nPago+a.nRepasse)/a.nTotal : 0;
+    a.situacao = a.nTotal===0 ? 'cancel' : a.nAtrasado>0 ? 'atrasado' : (a.nPago+a.nRepasse)===a.nTotal ? 'quitado' : 'dia';
+    a.formasTxt = [...a.formas].map(niceS).join(', ');
+  }
+  return [...map.values()];
+}
+function totais(rows){
+  const t = { n:rows.length, bruto:0, liq:0, pagoBruto:0, pagoLiq:0, repasse:0, repasseBruto:0, vencer:0, atrasado:0, cancel:0, nPago:0,nRepasse:0,nVencer:0,nAtrasado:0,nCancel:0, juros:0, taxasPagas:0, taxasPrev:0 };
+  for(const r of rows){
+    if(r.sit==='cancel'){ t.cancel+=r.valor; t.nCancel++; continue; }
+    t.bruto+=r.valor; t.liq+= r.previsto || (r.valor-r.taxas); t.taxasPrev+=r.taxas;
+    if(r.sit==='pago'){ t.pagoBruto+=r.pago; t.pagoLiq+=r.pagoLiq; t.nPago++; t.juros+=r.juros; t.taxasPagas+=r.taxas; }
+    else if(r.sit==='repasse'){ t.pagoBruto+=r.pago; t.repasse+=r.previsto||r.valor; t.repasseBruto+=r.pago; t.nRepasse++; }
+    else if(r.sit==='vencer'){ t.vencer+=r.previsto||r.valor; t.nVencer++; }
+    else if(r.sit==='atrasado'){ t.atrasado+=r.valor; t.nAtrasado++; }
+  }
+  t.nAtivas = t.n - t.nCancel;
+  t.alunosAtivos = uniq(rows.filter(r=>r.sit!=='cancel').map(r=>r.key)).length;
+  t.alunosAtrasados = uniq(rows.filter(r=>r.sit==='atrasado').map(r=>r.key)).length;
+  t.pctRecebido = t.liq ? t.pagoLiq/t.liq : 0;
+  t.falta = t.liq - t.pagoLiq;
+  return t;
+}
+function porChave(rows, keyFn, labelFn){
+  const m = new Map();
+  for(const r of rows){ const k=keyFn(r); if(k==null) continue; if(!m.has(k)) m.set(k,[]); m.get(k).push(r); }
+  return [...m.entries()].sort((a,b)=>loteCurto(String(a[0])).localeCompare(loteCurto(String(b[0])),'pt-BR',{numeric:true})).map(([k,rs])=>({ key:k, label: labelFn?labelFn(k):k, ...totais(rs) }));
+}
+const mesesData = rows => porChave(rows.filter(r=>r.sit!=='cancel'), r=>r.mesVenc, ymLabel);
+
+/* ===================== filtros ===================== */
+const defaultFilters = () => ({ tipoData:'none', de:'', ate:'', aluno:'', pacotes:new Set(), status:new Set(['pago','repasse','vencer','atrasado']), formas:new Set(), _atalho:null });
+function applyFilters(rows){
+  const de = parseISO(F.de), ate = parseISO(F.ate); if(ate) ate.setHours(23,59,59,999);
+  const q = F.aluno.trim().toLowerCase(); const qd = q.replace(/\D/g,'');
+  return rows.filter(r=>{
+    if(F.pacotes.size && !F.pacotes.has(r.pacote)) return false;
+    if(F.status.size && !F.status.has(r.sit)) return false;
+    if(F.formas.size && !F.formas.has(r.forma)) return false;
+    if(q && !(r.aluno.toLowerCase().includes(q) || r.email.toLowerCase().includes(q) || (qd && r.cpf.includes(qd)))) return false;
+    if(F.tipoData!=='none' && (de||ate)){ const d = F.tipoData==='venc' ? r.venc : r.pag; if(!d) return false; if(de && d<de) return false; if(ate && d>ate) return false; }
+    return true;
+  });
+}
+function filtrosAtivos(){
+  const p=[];
+  if(F.tipoData!=='none' && (F.de||F.ate)) p.push(['Período', (F.tipoData==='venc'?'venc. ':'pag. ')+(F.de?fmtDs(parseISO(F.de)):'…')+' → '+(F.ate?fmtDs(parseISO(F.ate)):'…')]);
+  if(F.pacotes.size) p.push(['Lote',[...F.pacotes].map(loteCurto).join(', ')]);
+  const dflt = ['pago','repasse','vencer','atrasado'];
+  if(!(F.status.size===4 && dflt.every(s=>F.status.has(s)))) p.push(['Situação',[...F.status].map(s=>SIT_S[s]).join(', ')||'nenhuma']);
+  if(F.formas.size) p.push(['Forma',[...F.formas].map(niceS).join(', ')]);
+  if(F.aluno.trim()) p.push(['Busca',F.aluno.trim()]);
+  return p;
+}
+const filtrosTexto = () => { const p=filtrosAtivos(); return p.length? p.map(x=>x[0].toLowerCase()+': '+x[1]).join(' · ') : 'todas as parcelas ativas (sem canceladas)'; };
+
+/* ===================== render ===================== */
+const kpi = (lbl,val,sub,cls) => `<div class="kpi ${cls||''}"><div class="lbl">${lbl}</div><div class="val">${val}</div>${sub?`<div class="sub">${sub}</div>`:''}</div>`;
+const badge = sit => `<span class="badge ${SIT_CLASS[sit]}">${SIT_S[sit]}</span>`;
+const badgeAluno = s => ({quitado:'<span class="badge b-quitado">Quitado</span>',dia:'<span class="badge b-dia">Em dia</span>',atrasado:'<span class="badge b-atrasado">Atrasado</span>',cancel:'<span class="badge b-cancel">Cancelado</span>'}[s]);
+const btn = (cls, ic, label, attrs) => `<button class="${cls}" ${attrs||''}>${ic}${label?`<span>${label}</span>`:''}</button>`;
+const exportBtn = (tid,label) => btn('', I.xls, label===undefined?'Excel':label, `data-export="${tid}" title="Baixar Excel"`);
+function th(cols, tid){ return '<tr>'+cols.map(c=>`<th class="${c.num?'num':''}" data-sort="${c.k}" data-tid="${tid}">${c.l}${SORT[tid]&&SORT[tid].key===c.k?(SORT[tid].dir>0?' ▲':' ▼'):''}</th>`).join('')+'</tr>'; }
+function sortRows(arr, tid, def){ const s = SORT[tid] || def; if(!s) return arr; return [...arr].sort((a,b)=>{ let x=a[s.key], y=b[s.key]; if(x instanceof Date) x=x.getTime(); if(y instanceof Date) y=y.getTime(); if(x==null) return 1; if(y==null) return -1; if(typeof x==='string') return x.localeCompare(y,'pt-BR',{numeric:true})*s.dir; return (x-y)*s.dir; }); }
+
+function renderNav(){
+  const mk = (b) => TABS.map(([k,l,ic])=>`<button class="${TAB===k?'on':''}" data-t="${k}">${b?ic:''}<span>${l}</span></button>`).join('');
+  $('#topnav').innerHTML = mk(false); $('#bottomnav').innerHTML = mk(true);
+  document.querySelectorAll('#topnav button,#bottomnav button').forEach(b=>b.onclick=()=>{ TAB=b.dataset.t; window.scrollTo({top:0}); renderNav(); render(); });
+}
+function renderMeta(){
+  const d=DATA; const ref = d.geradoEm||d.carregadoEm; const idade = (Date.now()-ref.getTime())/36e5;
+  $('#meta').innerHTML = `<span class="pill">Dados do Keeper: ${fmtDT(ref)}</span><span class="pill">${uniq(d.rows.filter(r=>r.sit!=='cancel').map(r=>r.key)).length} formandos</span>${d.arquivo==='atualização automática'?'<span class="pill">🤖 automático</span>':''}`;
+  $('#stale').innerHTML = idade>36 ? `<div class="stale noprint">⏰ <div>Estes dados têm ${Math.round(idade/24)} dias. Para números atualizados, baixe a planilha nova no Keeper e toque em <b>atualizar</b> (ícone ↻ no topo).</div></div>` : '';
+}
+function renderFilterbar(){
+  const p=filtrosAtivos();
+  $('#filterbar').innerHTML = (p.length? p.map(x=>`<span class="fchip"><b>${x[0]}:</b> ${esc(x[1])}</span>`).join('') : '<span class="fchip">Todas as parcelas ativas</span>') + btn('soft',I.filter,'Filtros','id="fbFiltros"') + (p.length?btn('',I.x,'Limpar','id="fbLimpar"'):'');
+  $('#fbFiltros').onclick=openSheet; const l=$('#fbLimpar'); if(l) l.onclick=()=>{ F=defaultFilters(); syncFilterInputs(); buildChips(); render(); };
+}
+function render(){
+  if(!DATA) return;
+  const rows = applyFilters(DATA.rows);
+  renderFilterbar();
+  const fn = { inicio:vInicio, mensal:vMensal, atraso:vAtraso, alunos:vAlunos, parcelas:vParcelas, mais:vMais }[TAB];
+  $('#view').innerHTML = fn(rows);
+  bindView(rows);
+}
+
+/* ---- Início ---- */
+function respostas(rows){
+  const t=totais(rows); const hk=ymKey(hoje()); const meses=mesesData(rows); const mes=meses.find(m=>m.key===hk);
+  const d=hoje(); d.setMonth(d.getMonth()+1); const prox=meses.find(m=>m.key===ymKey(d));
+  const pagMes = rows.filter(r=>(r.sit==='pago'||r.sit==='repasse') && r.mesPag===hk);
+  const lotes = porChave(rows, r=>r.pacote);
+  const cab = filtrosAtivos().length ? `(recorte: ${filtrosTexto()})\n` : '';
+  return [
+    { t:'Quanto já arrecadamos?', ic:I.money, a: cab+`Até ${fmtD(hoje())}, os formandos pagaram ${fmtBRL(t.pagoBruto)} (bruto). Desse total, ${fmtBRL(t.pagoLiq)} já está creditado na conta da turma (líquido, após ${fmtBRL(t.taxasPagas)} de taxas)${t.repasse?` e ${fmtBRL(t.repasse)} foram pagos no cartão/assinatura e ainda aguardam o repasse da plataforma`:''}.` },
+    { t:'Quanto falta receber?', ic:I.pct, a: cab+`Previsto: ${fmtBRL(t.liq)} líquido (${fmtBRL(t.bruto)} bruto) em ${fmtN(t.nAtivas)} parcelas de ${t.alunosAtivos} formandos. Já entrou ${fmtPct(t.pctRecebido)}. Faltam ${fmtBRL(t.falta)}: ${fmtBRL(t.vencer)} a vencer, ${fmtBRL(t.atrasado)} atrasados${t.repasse?` e ${fmtBRL(t.repasse)} aguardando repasse`:''}.` },
+    { t:'Quem está atrasado?', ic:I.alert, a: cab+textoAtraso(rows) },
+    { t:'Quanto entra este mês?', ic:I.cal, a: cab+(mes ? `Em ${ymLabelL(mes.key)} vencem ${fmtN(mes.nAtivas)} parcelas, ${fmtBRL(mes.liq)} líquido (${fmtBRL(mes.bruto)} bruto). Situação: ${fmtBRL(mes.pagoLiq)} já creditado, ${fmtBRL(mes.repasse)} aguardando repasse, ${fmtBRL(mes.vencer)} ainda a vencer e ${fmtBRL(mes.atrasado)} atrasados.` : 'Não há parcelas vencendo neste mês.') + (pagMes.length? `\n\nEfetivamente pago em ${MESES_L[hoje().getMonth()]} (pela data do pagamento): ${fmtBRL(sum(pagMes,r=>r.pago))} em ${pagMes.length} parcelas.`:'') },
+    { t:'Quanto entra no mês que vem?', ic:I.cal, a: cab+(prox ? `Em ${ymLabelL(prox.key)} estão previstas ${fmtN(prox.nAtivas)} parcelas, ${fmtBRL(prox.liq)} líquido (${fmtBRL(prox.bruto)} bruto).` : 'Não há parcelas previstas para o mês que vem.') },
+    { t:'Quantos aderiram por lote?', ic:I.users, a: cab+lotes.map(l=>`• ${l.label}: ${l.alunosAtivos} formandos · previsto ${fmtBRL(l.liq)} · creditado ${fmtBRL(l.pagoLiq)} (${fmtPct(l.pctRecebido)})`).join('\n') + `\nTotal: ${t.alunosAtivos} formandos com compra ativa.` },
+    { t:'Quanto pagamos de taxas?', ic:I.pct, a: cab+`A plataforma já descontou ${fmtBRL(t.taxasPagas)} sobre ${fmtBRL(t.pagoBruto)} pagos (${fmtPct(t.pagoBruto?t.taxasPagas/t.pagoBruto:0)}). Se todas as parcelas forem pagas, o custo previsto é ${fmtBRL(t.taxasPrev)} (${fmtPct(t.bruto?t.taxasPrev/t.bruto:0)} do bruto). Já recebemos ${fmtBRL(t.juros)} de juros e multa de quem pagou atrasado.` },
+  ];
+}
+function vInicio(rows){
+  const t = totais(rows);
+  const segs = [['pago',t.pagoLiq],['repasse',t.repasse],['vencer',t.vencer],['atrasado',t.atrasado]];
+  const tot = segs.reduce((a,x)=>a+x[1],0)||1;
+  const R=40, C=2*Math.PI*R, p=Math.min(1,t.pctRecebido);
+  const qa = respostas(rows);
+  return `
+  <div class="card">
+    <div class="summary">
+      <div class="ring"><svg viewBox="0 0 96 96"><circle cx="48" cy="48" r="${R}" fill="none" stroke="var(--line)" stroke-width="9"/><circle cx="48" cy="48" r="${R}" fill="none" stroke="var(--good)" stroke-width="9" stroke-linecap="round" stroke-dasharray="${(C*p).toFixed(1)} ${C.toFixed(1)}"/></svg><div class="c"><div>${fmtPct(t.pctRecebido).replace(',0%','%')}<small>recebido</small></div></div></div>
+      <div>
+        <div class="small muted" style="text-transform:uppercase;letter-spacing:.06em;font-weight:700;font-size:11px">Já na conta da turma</div>
+        <div class="big num">${fmtBRL(t.pagoLiq)}</div>
+        <div class="of">de <b class="num">${fmtBRL(t.liq)}</b> previstos (líquido)<br>faltam <b class="num">${fmtBRL(t.falta)}</b></div>
+      </div>
+    </div>
+    <div class="segbar">${segs.map(([s,v])=>v>0?`<i style="width:${(v/tot*100).toFixed(2)}%;background:${SIT_COLOR[s]}" title="${SIT[s]}: ${fmtBRL(v)}"></i>`:'').join('')}</div>
+    <div class="seglegend">${segs.map(([s,v])=>`<span><i style="background:${SIT_COLOR[s]}"></i>${SIT_S[s]} <b class="num">${fmtBRL(v)}</b></span>`).join('')}</div>
+  </div>
+  <div class="kpis">
+    ${kpi('Formandos', t.alunosAtivos, `${fmtN(t.nAtivas)} parcelas ativas`, 'brand')}
+    ${kpi('Atrasado', fmtBRL(t.atrasado), `${t.nAtrasado} parcela(s) · ${t.alunosAtrasados} formando(s)`, 'crit')}
+    ${kpi('A vencer', fmtBRL(t.vencer), `${fmtN(t.nVencer)} parcelas futuras`, 'future')}
+    ${kpi('Aguardando repasse', fmtBRL(t.repasse), `${t.nRepasse} parcela(s) no cartão · "A receber" no Keeper`, 'warn')}
+  </div>
+  <div class="section-title"><h2>Respostas prontas para enviar</h2><span class="small muted">toque para copiar ou enviar</span></div>
+  <div class="qa">${qa.map((q,i)=>`<div class="card"><h3><span class="ic">${q.ic}</span>${q.t}</h3><div class="ans" id="qa${i}">${esc(q.a)}</div><div class="btns">${btn('soft',I.copy,'Copiar',`data-copy="qa${i}"`)}${btn('primary',I.share,'Enviar',`data-share="qa${i}"`)}</div></div>`).join('')}</div>
+  <div class="section-title"><h2>Relatório completo</h2></div>
+  <div class="card">
+    <div class="small muted" style="margin-bottom:8px">Texto pronto para WhatsApp ou e-mail. Pode editar antes de enviar. Recorte atual: ${esc(filtrosTexto())}.</div>
+    <textarea id="txtGeral">${esc(textoGeral(rows))}</textarea>
+    <div class="btns" style="margin-top:10px">${btn('soft',I.copy,'Copiar',`id="copyGeral"`)}${btn('primary',I.share,'Enviar',`id="shareGeral"`)}${btn('',I.print,'PDF',`id="printGeral"`)}</div>
+  </div>
+  <div class="section-title"><h2>Por lote</h2>${exportBtn('lote','')}</div>
+  <div class="card tight"><div class="tablewrap"><table id="t-lote">
+    <tr><th>Lote</th><th class="num">Formandos</th><th class="num">Previsto líq.</th><th class="num">Creditado</th><th class="num">Atrasado</th><th class="num">% receb.</th></tr>
+    ${porChave(rows,r=>r.pacote).map(l=>`<tr><td>${esc(l.label)}</td><td class="num">${l.alunosAtivos}</td><td class="num">${fmtBRL(l.liq)}</td><td class="num">${fmtBRL(l.pagoLiq)}</td><td class="num">${fmtBRL(l.atrasado)}</td><td class="num">${fmtPct(l.pctRecebido)}</td></tr>`).join('')}
+    <tr class="total"><td>Total</td><td class="num">${t.alunosAtivos}</td><td class="num">${fmtBRL(t.liq)}</td><td class="num">${fmtBRL(t.pagoLiq)}</td><td class="num">${fmtBRL(t.atrasado)}</td><td class="num">${fmtPct(t.pctRecebido)}</td></tr>
+  </table></div></div>
+  <div class="section-title"><h2>Próximos meses</h2></div>
+  <div class="card tight">${chartMensal(rows, isMobile()?6:12)}</div>`;
+}
+function textoAtraso(rows){
+  const al = consolidar(rows).filter(a=>a.nAtrasado>0).sort((a,b)=>b.atrasado-a.atrasado);
+  if(!al.length) return 'Nenhum formando com parcela atrasada. 🎉';
+  const lines = [`*Parcelas atrasadas* (${fmtD(hoje())})`, `${al.length} formando(s) · ${sum(al,a=>a.nAtrasado)} parcela(s) · ${fmtBRL(sum(al,a=>a.atrasado))}`, ''];
+  al.forEach((a,i)=>{ const ps=a.parcelas.filter(p=>p.sit==='atrasado').sort((x,y)=>x.venc-y.venc); lines.push(`${i+1}. ${a.aluno} — ${a.nAtrasado} parcela(s), ${fmtBRL(a.atrasado)} (${ps.map(p=>'parc. '+p.n+' venc. '+fmtDs(p.venc)).join('; ')})`); });
+  lines.push('', '_Valores originais; no boleto atualizado entram juros e multa._');
+  return lines.join('\n');
+}
+function textoGeral(rows){
+  const t=totais(rows); const lotes=porChave(rows,r=>r.pacote); const meses=mesesData(rows); const hk=ymKey(hoje());
+  const l=[`*Relatório financeiro — Formatura*`,`Data: ${fmtD(hoje())} (dados do Keeper de ${fmtDT(DATA.geradoEm||DATA.carregadoEm)})`,`Recorte: ${filtrosTexto()}`,'',
+    `*Resumo*`,`• Formandos com compra ativa: ${t.alunosAtivos}`,`• Parcelas: ${fmtN(t.nAtivas)} (${fmtN(t.nPago)} pagas e creditadas, ${fmtN(t.nRepasse)} pagas aguardando repasse, ${fmtN(t.nVencer)} a vencer, ${fmtN(t.nAtrasado)} atrasadas)`,
+    `• Previsto: ${fmtBRL(t.bruto)} bruto → ${fmtBRL(t.liq)} líquido (após ${fmtBRL(t.taxasPrev)} de taxas)`,`• Já creditado na conta: ${fmtBRL(t.pagoLiq)} (${fmtPct(t.pctRecebido)} do previsto)`];
+  if(t.repasse) l.push(`• Pago, aguardando repasse: ${fmtBRL(t.repasse)}`);
+  l.push(`• A vencer: ${fmtBRL(t.vencer)}`,`• Atrasado: ${fmtBRL(t.atrasado)} (${t.alunosAtrasados} formando(s), ${t.nAtrasado} parcela(s))`);
+  if(t.juros) l.push(`• Juros e multa recebidos: ${fmtBRL(t.juros)}`);
+  if(lotes.length>1){ l.push('',`*Por lote*`); lotes.forEach(x=>l.push(`• ${x.label}: ${x.alunosAtivos} formandos · previsto ${fmtBRL(x.liq)} · creditado ${fmtBRL(x.pagoLiq)} (${fmtPct(x.pctRecebido)}) · atrasado ${fmtBRL(x.atrasado)}`)); }
+  const win = meses.filter(m=>m.key>=hk).slice(0,3);
+  if(win.length){ l.push('',`*Próximos meses (por vencimento)*`); win.forEach(m=>l.push(`• ${ymLabelL(m.key)}: ${fmtN(m.nAtivas)} parcelas, ${fmtBRL(m.liq)} líquido`)); }
+  const atr = consolidar(rows).filter(a=>a.nAtrasado>0).sort((a,b)=>b.atrasado-a.atrasado);
+  if(atr.length){ l.push('',`*Formandos em atraso*`); atr.forEach(a=>l.push(`• ${a.aluno}: ${a.nAtrasado} parcela(s), ${fmtBRL(a.atrasado)}`)); }
+  l.push('',`_Líquido = após tarifas de cobrança e taxa Keeper. "Aguardando repasse" = pago no cartão/assinatura, ainda não creditado na conta da turma._`);
+  return l.join('\n');
+}
+
+/* ---- gráfico ---- */
+function chartMensal(rows, maxMeses){
+  const m = mesesData(rows); let keys = m.map(x=>x.key);
+  if(maxMeses && keys.length>maxMeses){ const h=ymKey(hoje()); let i=keys.indexOf(h); if(i<0) i=keys.findIndex(k=>k>h); if(i<0) i=keys.length-1; const start=Math.max(0,Math.min(i-1,keys.length-maxMeses)); keys=keys.slice(start,start+maxMeses); }
+  const data = keys.map(k=>m.find(x=>x.key===k));
+  if(!data.length) return '<div class="empty">Sem dados no período.</div>';
+  const W=640,H=240,padL=54,padR=10,padT=18,padB=36;
+  const series=[['pagoLiq','pago'],['repasse','repasse'],['vencer','vencer'],['atrasado','atrasado']];
+  const max=Math.max(1,...data.map(d=>series.reduce((a,[k])=>a+d[k],0)));
+  const rawStep=max/4, mag=Math.pow(10,Math.floor(Math.log10(rawStep))); const step=[1,2,2.5,5,10].map(x=>x*mag).find(x=>x>=rawStep); const top=step*4;
+  const bw=(W-padL-padR)/data.length, cw=Math.min(44,bw*0.68);
+  const y=v=>padT+(H-padT-padB)*(1-v/top);
+  let svg=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Recebimentos por mês">`;
+  for(let i=0;i<=4;i++){ const v=top*i/4; svg+=`<line x1="${padL}" x2="${W-padR}" y1="${y(v)}" y2="${y(v)}" stroke="#ece9f1"/><text x="${padL-8}" y="${y(v)+4}" text-anchor="end" font-size="10" fill="#8d879a">${fmtK(v)}</text>`; }
+  const every=Math.max(1,Math.ceil(data.length/(isMobile()?6:12))); const showVal=cw>=26; const anchor=Math.max(0,data.findIndex(d=>d.key===ymKey(hoje())));
+  data.forEach((d,i)=>{ const x=padL+bw*i+(bw-cw)/2; let acc=0; const tot=series.reduce((a,[k])=>a+d[k],0);
+    series.forEach(([k,s])=>{ if(d[k]<=0) return; const y1=y(acc+d[k]), y0=y(acc); svg+=`<rect x="${x}" y="${y1}" width="${cw}" height="${Math.max(0,y0-y1-1.5)}" fill="${SIT_COLOR[s]}" rx="2" data-tip="${esc(ymLabelL(d.key))} — ${SIT[s]}: ${fmtBRL(d[k])}"/>`; acc+=d[k]; });
+    const atual=d.key===ymKey(hoje());
+    if((i-anchor)%every===0) svg+=`<text x="${x+cw/2}" y="${H-padB+15}" text-anchor="middle" font-size="10.5" font-weight="${atual?700:400}" fill="${atual?'#7b2d8e':'#5a5468'}">${ymLabel(d.key)}</text>`;
+    if(tot>0 && showVal) svg+=`<text x="${x+cw/2}" y="${y(tot)-5}" text-anchor="middle" font-size="9.5" fill="#5a5468">${fmtK(tot)}</text>`;
+  });
+  svg+='</svg>';
+  return svg+`<div class="legend">${series.map(([k,s])=>`<span><i style="background:${SIT_COLOR[s]}"></i>${SIT_S[s]}</span>`).join('')}<span class="muted">· por mês de vencimento · toque na barra para ver o valor</span></div>`;
+}
+
+/* ---- Mensal ---- */
+function vMensal(rows){
+  const base = rows.filter(r=>r.sit!=='cancel');
+  const porVenc = porChave(base, r=>r.mesVenc, ymLabel);
+  const porPag = porChave(base.filter(r=>r.sit==='pago'||r.sit==='repasse'), r=>r.mesPag, ymLabel);
+  let acum=0; const t=totais(base); const hk=ymKey(hoje());
+  return `
+  <div class="card tight">${chartMensal(rows, 0)}</div>
+  <div class="section-title"><h2>Previsão por mês de vencimento</h2>${exportBtn('mensal','')}</div>
+  <div class="card tight"><div class="tablewrap"><table id="t-mensal">
+    <tr><th>Mês</th><th class="num">Parc.</th><th class="num">Previsto líq.</th><th class="num">Creditado</th><th class="num">Aguard. repasse</th><th class="num">A vencer</th><th class="num">Atrasado</th><th class="num">Previsto bruto</th><th class="num">Acumulado líq.</th></tr>
+    ${porVenc.map(x=>{ acum+=x.liq; const now=x.key===hk; return `<tr class="${now?'now':''}"><td>${x.label}${now?' <span class="small muted">atual</span>':''}</td><td class="num">${fmtN(x.nAtivas)}</td><td class="num">${fmtBRL(x.liq)}</td><td class="num">${fmtBRL(x.pagoLiq)}</td><td class="num">${fmtBRL(x.repasse)}</td><td class="num">${fmtBRL(x.vencer)}</td><td class="num">${fmtBRL(x.atrasado)}</td><td class="num">${fmtBRL(x.bruto)}</td><td class="num">${fmtBRL(acum)}</td></tr>`; }).join('')}
+    <tr class="total"><td>Total</td><td class="num">${fmtN(t.nAtivas)}</td><td class="num">${fmtBRL(t.liq)}</td><td class="num">${fmtBRL(t.pagoLiq)}</td><td class="num">${fmtBRL(t.repasse)}</td><td class="num">${fmtBRL(t.vencer)}</td><td class="num">${fmtBRL(t.atrasado)}</td><td class="num">${fmtBRL(t.bruto)}</td><td class="num">${fmtBRL(acum)}</td></tr>
+  </table></div></div>
+  <div class="section-title"><h2>Efetivamente pago, por mês do pagamento</h2>${exportBtn('pagmes','')}</div>
+  <div class="card tight"><div class="head" style="padding-bottom:0"><div class="sub">Quando o dinheiro realmente entrou (data em que o formando pagou).</div></div><div class="tablewrap"><table id="t-pagmes">
+    <tr><th>Mês</th><th class="num">Parcelas</th><th class="num">Formandos</th><th class="num">Pago (bruto)</th><th class="num">Juros/multa</th><th class="num">Taxas</th><th class="num">Creditado (líq.)</th><th class="num">Aguard. repasse</th></tr>
+    ${porPag.map(x=>`<tr><td>${x.label}</td><td class="num">${fmtN(x.nPago+x.nRepasse)}</td><td class="num">${x.alunosAtivos}</td><td class="num">${fmtBRL(x.pagoBruto)}</td><td class="num">${fmtBRL(x.juros)}</td><td class="num">${fmtBRL(x.taxasPagas)}</td><td class="num">${fmtBRL(x.pagoLiq)}</td><td class="num">${fmtBRL(x.repasse)}</td></tr>`).join('')}
+    ${porPag.length?'':'<tr><td colspan="8" class="empty">Nenhum pagamento no filtro.</td></tr>'}
+  </table></div></div>`;
+}
+
+/* ---- Atrasos ---- */
+function vAtraso(rows){
+  const al = consolidar(rows).filter(a=>a.nAtrasado>0);
+  const list = sortRows(al,'atraso',{key:'atrasado',dir:-1});
+  const tot = sum(al,a=>a.atrasado), nP = sum(al,a=>a.nAtrasado);
+  const cols=[{k:'aluno',l:'Formando(a)'},{k:'pacote',l:'Lote'},{k:'nAtrasado',l:'Parc. atrasadas',num:1},{k:'atrasado',l:'Valor',num:1},{k:'maxAtraso',l:'Dias',num:1},{k:'nPago',l:'Pagas',num:1},{k:'vencer',l:'A vencer',num:1},{k:'email',l:'Contato'}];
+  return `
+  <div class="kpis">
+    ${kpi('Total atrasado', fmtBRL(tot), `${fmtN(nP)} parcela(s), valor original`, 'crit')}
+    ${kpi('Formandos em atraso', al.length, `de ${consolidar(rows).filter(a=>a.nTotal>0).length} com parcelas ativas`, 'plain')}
+    ${kpi('Maior atraso', al.length? Math.max(...al.map(a=>a.maxAtraso))+' dias':'—', 'contado até hoje', 'warn')}
+    ${kpi('Recebido em juros/multa', fmtBRL(totais(rows).juros), 'de quem já pagou atrasado', 'good')}
+  </div>
+  <div class="section-title"><h2>Quem está atrasado</h2><div class="btns">${btn('soft',I.copy,'Copiar',`id="copyAtraso"`)}${btn('primary',I.share,'Enviar',`id="shareAtraso"`)}${exportBtn('atraso','')}</div></div>
+  <div class="card tight">
+    ${list.length? (isMobile()
+      ? `<div class="list">${list.map(a=>`<div class="item" data-aluno="${esc(a.key)}"><div><div class="name">${esc(a.aluno)}</div><div class="sub">${loteCurto(a.pacote)} · ${a.nAtrasado} de ${a.nTotal} parc. · ${a.maxAtraso} dias</div></div><div class="right" style="color:var(--crit)">${fmtBRL(a.atrasado)}<div class="sub muted">${a.parcelas.filter(p=>p.sit==='atrasado').map(p=>fmtDs(p.venc)).join(', ')}</div></div></div>`).join('')}</div>`
+      : `<div class="tablewrap"><table id="t-atraso">${th(cols,'atraso')}${list.map(a=>`<tr class="click" data-aluno="${esc(a.key)}"><td>${esc(a.aluno)}</td><td>${loteCurto(a.pacote)}</td><td class="num">${a.nAtrasado} de ${a.nTotal}</td><td class="num">${fmtBRL(a.atrasado)}</td><td class="num">${a.maxAtraso}</td><td class="num">${a.nPago+a.nRepasse}</td><td class="num">${fmtBRL(a.vencer)}</td><td class="small">${esc(a.email)}</td></tr>`).join('')}<tr class="total"><td>Total</td><td></td><td class="num">${nP}</td><td class="num">${fmtBRL(tot)}</td><td colspan="4"></td></tr></table></div>`)
+    : '<div class="empty"><b>🎉</b>Nenhuma parcela atrasada no recorte atual.</div>'}
+  </div>
+  ${isMobile()?`<table id="t-atraso" class="hide">${th(cols,'atraso')}${list.map(a=>`<tr><td>${esc(a.aluno)}</td><td>${esc(a.pacote)}</td><td>${a.nAtrasado}</td><td>${fmtBRL(a.atrasado)}</td><td>${a.maxAtraso}</td><td>${a.nPago+a.nRepasse}</td><td>${fmtBRL(a.vencer)}</td><td>${esc(a.email)}</td></tr>`).join('')}</table>`:''}
+  <div class="section-title"><h2>Parcelas atrasadas (detalhe)</h2>${exportBtn('atrasoDet','')}</div>
+  <div class="card tight"><div class="tablewrap"><table id="t-atrasoDet"><tr><th>Formando(a)</th><th class="num">Parc.</th><th>Venc.</th><th class="num">Dias</th><th class="num">Valor</th><th>Forma</th><th>Lote</th></tr>
+    ${rows.filter(r=>r.sit==='atrasado').sort((a,b)=>a.venc-b.venc).map(r=>`<tr><td>${esc(r.aluno)}</td><td class="num">${r.n}</td><td>${fmtD(r.venc)}</td><td class="num">${r.diasAtraso}</td><td class="num">${fmtBRL(r.valor)}</td><td>${niceS(r.forma)}</td><td>${loteCurto(r.pacote)}</td></tr>`).join('')}
+  </table></div></div>`;
+}
+
+/* ---- Formandos ---- */
+function vAlunos(rows){
+  const al = sortRows(consolidar(rows),'alunos',{key:'aluno',dir:1});
+  const ativos = al.filter(a=>a.nTotal>0);
+  const cols=[{k:'aluno',l:'Formando(a)'},{k:'pacote',l:'Lote'},{k:'situacao',l:'Situação'},{k:'nTotal',l:'Parc.',num:1},{k:'totalLiq',l:'Previsto líq.',num:1},{k:'pagoLiq',l:'Creditado',num:1},{k:'repasse',l:'Aguard. repasse',num:1},{k:'vencer',l:'A vencer',num:1},{k:'atrasado',l:'Atrasado',num:1},{k:'pctPago',l:'% pago',num:1},{k:'proxVenc',l:'Próx. venc.'},{k:'formasTxt',l:'Forma'}];
+  return `
+  <div class="kpis">
+    ${kpi('Com compra ativa', ativos.length, `${al.length-ativos.length} cancelado(s)`, 'brand')}
+    ${kpi('Em dia', ativos.filter(a=>a.situacao==='dia').length, 'sem atraso','future')}
+    ${kpi('Atrasados', ativos.filter(a=>a.situacao==='atrasado').length, '1+ parcela vencida','crit')}
+    ${kpi('Quitados', ativos.filter(a=>a.situacao==='quitado').length, 'tudo pago','good')}
+  </div>
+  <div class="section-title"><h2>Situação por formando</h2><div class="btns"><input type="search" id="qAluno" placeholder="buscar…" style="width:150px;padding:6px 10px;border-radius:999px" value="${esc(F.aluno)}">${exportBtn('alunos','')}</div></div>
+  <div class="card tight">
+    ${isMobile()
+      ? `<div class="list">${al.map(a=>`<div class="item" data-aluno="${esc(a.key)}"><div><div class="name">${esc(a.aluno)}</div><div class="sub">${loteCurto(a.pacote)} · ${a.nPago+a.nRepasse}/${a.nTotal} pagas${a.proxVenc?' · próx. '+fmtDs(a.proxVenc):''}</div></div><div class="right">${badgeAluno(a.situacao)}<div class="sub muted">${a.atrasado?'<span style="color:var(--crit)">'+fmtBRL(a.atrasado)+' atras.</span>':fmtBRL(a.pagoLiq)+' pago'}</div></div><div class="bar"><i style="width:${(a.pctPago*100).toFixed(0)}%"></i></div></div>`).join('')}</div>`
+      : `<div class="tablewrap"><table id="t-alunos">${th(cols,'alunos')}${al.map(a=>`<tr class="click" data-aluno="${esc(a.key)}"><td>${esc(a.aluno)}<div class="small muted">${fmtCPF(a.cpf)}</div></td><td>${loteCurto(a.pacote)}</td><td>${badgeAluno(a.situacao)}</td><td class="num">${a.nTotal}${a.nCancel?` <span class="small muted">(+${a.nCancel} canc.)</span>`:''}</td><td class="num">${fmtBRL(a.totalLiq)}</td><td class="num">${fmtBRL(a.pagoLiq)}</td><td class="num">${fmtBRL(a.repasse)}</td><td class="num">${fmtBRL(a.vencer)}</td><td class="num">${fmtBRL(a.atrasado)}</td><td class="num">${fmtPct(a.pctPago)}<div class="bar"><i style="width:${(a.pctPago*100).toFixed(0)}%"></i></div></td><td>${fmtD(a.proxVenc)}</td><td class="small">${esc(a.formasTxt)}</td></tr>`).join('')}</table></div>`}
+  </div>
+  ${isMobile()?`<table id="t-alunos" class="hide">${th(cols,'alunos')}${al.map(a=>`<tr><td>${esc(a.aluno)}</td><td>${esc(a.pacote)}</td><td>${ {quitado:'Quitado',dia:'Em dia',atrasado:'Atrasado',cancel:'Cancelado'}[a.situacao] }</td><td>${a.nTotal}</td><td>${fmtBRL(a.totalLiq)}</td><td>${fmtBRL(a.pagoLiq)}</td><td>${fmtBRL(a.repasse)}</td><td>${fmtBRL(a.vencer)}</td><td>${fmtBRL(a.atrasado)}</td><td>${fmtPct(a.pctPago)}</td><td>${fmtD(a.proxVenc)}</td><td>${esc(a.formasTxt)}</td></tr>`).join('')}</table>`:''}`;
+}
+function extratoAluno(key){
+  const rows = DATA.rows.filter(r=>r.key===key); const a = consolidar(rows)[0]; if(!a) return;
+  const ps = [...rows].sort((x,y)=> (x.sit==='cancel')-(y.sit==='cancel') || x.n-y.n);
+  $('#modalBox').innerHTML = `
+    <div class="head"><div><h2>${esc(a.aluno)}</h2><div class="small muted">${fmtCPF(a.cpf)} · ${esc(a.email)}<br>${esc(a.pacote)} · ${a.aderidoEm?'aderiu em '+fmtD(a.aderidoEm):'1ª parcela em '+fmtD(a.primVenc)}</div></div><button class="icon" id="closeModal" aria-label="Fechar">${I.x}</button></div>
+    <div class="kpis" style="margin-bottom:12px">
+      ${kpi('Situação', badgeAluno(a.situacao), `${a.nPago+a.nRepasse} de ${a.nTotal} parcelas pagas`, 'plain')}
+      ${kpi('Pago', fmtBRL(a.pagoBruto), `${fmtBRL(a.pagoLiq)} creditado${a.repasse?' · '+fmtBRL(a.repasse)+' aguard.':''}`, 'good')}
+      ${kpi('Atrasado', fmtBRL(a.atrasado), a.nAtrasado+' parcela(s)', a.nAtrasado?'crit':'plain')}
+      ${kpi('A vencer', fmtBRL(a.vencer), a.nVencer+' parcela(s)'+(a.proxVenc?' · próx. '+fmtDs(a.proxVenc):''), 'future')}
+    </div>
+    <div class="btns" style="margin-bottom:12px">${btn('soft',I.copy,'Copiar resumo',`id="copyExtrato"`)}${btn('primary',I.share,'Enviar',`id="shareExtrato"`)}${btn('',I.xls,'Excel',`id="xlsExtrato"`)}</div>
+    <div class="tablewrap"><table id="t-extrato"><tr><th class="num">Nº</th><th>Situação</th><th>Venc.</th><th>Pagamento</th><th>Forma</th><th class="num">Valor</th><th class="num">Taxas</th><th class="num">Líq. previsto</th><th class="num">Juros/multa</th><th class="num">Pago</th><th class="num">Pago líq.</th><th>Conciliação</th></tr>
+    ${ps.map(r=>`<tr><td class="num">${r.n}</td><td>${badge(r.sit)}</td><td>${fmtD(r.venc)}</td><td>${fmtD(r.pag)}</td><td>${niceS(r.forma)}</td><td class="num">${fmtBRL(r.valor)}</td><td class="num">${fmtBRL(r.taxas)}</td><td class="num">${fmtBRL(r.previsto)}</td><td class="num">${fmtBRL(r.juros)}</td><td class="num">${fmtBRL(r.pago)}</td><td class="num">${fmtBRL(r.pagoLiq)}</td><td>${fmtD(r.conc)}</td></tr>`).join('')}
+    </table></div>`;
+  $('#modal').classList.add('on');
+  $('#closeModal').onclick = ()=>$('#modal').classList.remove('on');
+  $('#copyExtrato').onclick = ()=>copy(textoAluno(a)); $('#shareExtrato').onclick = ()=>share(textoAluno(a), a.aluno);
+  $('#xlsExtrato').onclick = ()=>exportTable('t-extrato','extrato-'+a.aluno);
+}
+function textoAluno(a){
+  const l=[`*${a.aluno}* — ${a.pacote}`, `Situação: ${ {quitado:'quitado ✅',dia:'em dia ✅',atrasado:'com parcela atrasada ⚠️',cancel:'compra cancelada'}[a.situacao] }`,
+    `Parcelas: ${a.nPago+a.nRepasse} pagas de ${a.nTotal} (${fmtPct(a.pctPago)})`, `Total pago: ${fmtBRL(a.pagoBruto)}${a.juros?' (inclui '+fmtBRL(a.juros)+' de juros/multa)':''}`];
+  if(a.nAtrasado) l.push(`Atrasado: ${a.nAtrasado} parcela(s), ${fmtBRL(a.atrasado)} — ${a.parcelas.filter(p=>p.sit==='atrasado').map(p=>'parc. '+p.n+' venc. '+fmtDs(p.venc)).join('; ')}`);
+  if(a.nVencer) l.push(`A vencer: ${a.nVencer} parcela(s), ${fmtBRL(a.vencer)} líquido — próxima em ${fmtD(a.proxVenc)}`);
+  return l.join('\n');
+}
+
+/* ---- Parcelas ---- */
+const PCOLS=[{k:'aluno',l:'Formando(a)'},{k:'pacote',l:'Lote'},{k:'n',l:'Nº',num:1},{k:'sit',l:'Situação'},{k:'forma',l:'Forma'},{k:'venc',l:'Vencimento'},{k:'pag',l:'Pagamento'},{k:'conc',l:'Conciliação'},{k:'valor',l:'Valor parcela',num:1},{k:'tarifa',l:'Tarifa',num:1},{k:'antecip',l:'Tarifa antecip.',num:1},{k:'keeper',l:'Taxa Keeper',num:1},{k:'previsto',l:'Líq. previsto',num:1},{k:'juros',l:'Juros/multa',num:1},{k:'pago',l:'Valor pago',num:1},{k:'pagoLiq',l:'Pago líquido',num:1},{k:'diasAtraso',l:'Dias atraso',num:1},{k:'cpf',l:'CPF'},{k:'email',l:'E-mail'}];
+let PVIS = new Set(isMobile()? ['aluno','n','sit','venc','valor','pago'] : ['aluno','pacote','n','sit','forma','venc','pag','valor','previsto','pago','pagoLiq']);
+function vParcelas(rows){
+  const list = sortRows(rows,'parcelas',{key:'venc',dir:1}); const cols = PCOLS.filter(c=>PVIS.has(c.k)); const t=totais(rows);
+  const cell=(r,k)=>{ const v=r[k]; if(k==='sit') return badge(v); if(k==='forma') return niceS(v); if(k==='pacote') return loteCurto(v); if(v instanceof Date) return fmtD(v); if(k==='cpf') return fmtCPF(v); if(k==='n'||k==='diasAtraso') return v; if(typeof v==='number') return fmtBRL(v); return esc(v); };
+  return `
+  <div class="section-title"><h2>${fmtN(rows.length)} parcelas</h2><div class="btns">${btn('',I.list,'Colunas',`id="btnCols"`)}${exportBtn('parcelas','')}</div></div>
+  <div class="card tight">
+    <div id="colPicker" class="chips hide" style="padding:12px 14px;border-bottom:1px solid var(--line)">${PCOLS.map(c=>`<span class="chip ${PVIS.has(c.k)?'on':''}" data-col="${c.k}">${c.l}</span>`).join('')}</div>
+    <div class="tablewrap" style="max-height:72vh;overflow:auto"><table id="t-parcelas">${th(cols,'parcelas')}
+      ${list.map(r=>`<tr>${cols.map(c=>`<td class="${c.num?'num':''}">${cell(r,c.k)}</td>`).join('')}</tr>`).join('')}
+      <tr class="total">${cols.map(c=>`<td class="${c.num?'num':''}">${c.k==='aluno'?'Total':c.k==='valor'?fmtBRL(t.bruto):c.k==='previsto'?fmtBRL(t.liq):c.k==='pago'?fmtBRL(t.pagoBruto):c.k==='pagoLiq'?fmtBRL(t.pagoLiq):c.k==='juros'?fmtBRL(t.juros):''}</td>`).join('')}</tr>
+    </table></div>
+  </div>`;
+}
+
+/* ---- Mais: taxas, glossário, dados ---- */
+function vMais(rows){
+  const base = rows.filter(r=>r.sit!=='cancel'); const pagas = base.filter(r=>r.sit==='pago'); const t=totais(rows);
+  const prev = { tarifa:sum(base,r=>r.tarifa), antecip:sum(base,r=>r.antecip), keeper:sum(base,r=>r.keeper) };
+  const pg = { tarifa:sum(pagas,r=>r.tarifa), antecip:sum(pagas,r=>r.antecip), keeper:sum(pagas,r=>r.keeper) };
+  const porForma = porChave(base, r=>r.forma, nice);
+  const linha=(l,p,q,desc)=>`<tr><td>${l}<div class="small muted" style="white-space:normal">${desc}</div></td><td class="num">${fmtBRL(q)}</td><td class="num">${fmtBRL(p)}</td><td class="num">${fmtPct(t.bruto?p/t.bruto:0)}</td></tr>`;
+  const d=DATA;
+  return `
+  <div class="card tight"><div class="list">
+    <div class="item" id="mNovo"><div><div class="name">↻ Atualizar dados</div><div class="sub">Busca a atualização automática · atual: ${fmtDT(d.geradoEm||d.carregadoEm)}</div></div><div class="right muted">${I.chev}</div></div>
+    <div class="item" id="mArquivo"><div><div class="name">📂 Carregar planilha manualmente</div><div class="sub">Escolher um arquivo .xlsx baixado do Keeper</div></div><div class="right muted">${I.chev}</div></div>
+    <div class="item" id="mGloss"><div><div class="name">📖 Glossário</div><div class="sub">O que significa cada número</div></div><div class="right muted">${I.chev}</div></div>
+    <div class="item" id="mPrint"><div><div class="name">🖨️ Imprimir / salvar em PDF</div><div class="sub">Imprime a tela atual</div></div><div class="right muted">${I.chev}</div></div>
+    <div class="item" id="mLimpar"><div><div class="name">🗑️ Apagar dados deste aparelho</div><div class="sub">Remove a planilha salva aqui</div></div><div class="right muted">${I.chev}</div></div>
+  </div></div>
+  <div class="section-title"><h2>Taxas e custos</h2>${exportBtn('taxas','')}</div>
+  <div class="kpis">
+    ${kpi('Taxas já descontadas', fmtBRL(t.taxasPagas), `${fmtPct(t.pagoBruto?t.taxasPagas/t.pagoBruto:0)} do que foi pago`, 'crit')}
+    ${kpi('Taxas previstas (total)', fmtBRL(t.taxasPrev), `${fmtPct(t.bruto?t.taxasPrev/t.bruto:0)} do bruto previsto`, 'warn')}
+    ${kpi('Juros e multa recebidos', fmtBRL(t.juros), 'entram como receita', 'good')}
+    ${kpi('Custo médio / parcela', fmtBRL(base.length?t.taxasPrev/base.length:0), 'previsto', 'plain')}
+  </div>
+  <div class="card tight"><div class="tablewrap"><table id="t-taxas"><tr><th>Taxa</th><th class="num">Já descontado</th><th class="num">Previsto</th><th class="num">% bruto</th></tr>
+    ${linha('Tarifa de cobrança', prev.tarifa, pg.tarifa, 'custo do boleto / Pix / cartão por parcela (ex.: R$ 1,50 por boleto)')}
+    ${linha('Tarifa de antecipação', prev.antecip, pg.antecip, 'cobrada quando o valor do cartão é antecipado')}
+    ${linha('Taxa Keeper', prev.keeper, pg.keeper, 'percentual da plataforma sobre cada parcela (~0,9%)')}
+    <tr class="total"><td>Total</td><td class="num">${fmtBRL(pg.tarifa+pg.antecip+pg.keeper)}</td><td class="num">${fmtBRL(prev.tarifa+prev.antecip+prev.keeper)}</td><td class="num">${fmtPct(t.bruto?(prev.tarifa+prev.antecip+prev.keeper)/t.bruto:0)}</td></tr>
+  </table></div></div>
+  <div class="section-title"><h2>Custo por forma de pagamento</h2></div>
+  <div class="card tight"><div class="tablewrap"><table><tr><th>Forma</th><th class="num">Parc.</th><th class="num">Bruto</th><th class="num">Taxas prev.</th><th class="num">Média/parc.</th><th class="num">% bruto</th></tr>
+    ${porForma.map(f=>{ const rs=base.filter(r=>r.forma===f.key); const tx=sum(rs,r=>r.taxas); return `<tr><td>${esc(f.label)}</td><td class="num">${rs.length}</td><td class="num">${fmtBRL(f.bruto)}</td><td class="num">${fmtBRL(tx)}</td><td class="num">${fmtBRL(rs.length?tx/rs.length:0)}</td><td class="num">${fmtPct(f.bruto?tx/f.bruto:0)}</td></tr>`; }).join('')}
+  </table></div></div>
+  <div class="section-title"><h2>Parcelas por situação</h2></div>
+  <div class="card tight"><div class="tablewrap"><table><tr><th>Situação</th><th class="num">Parc.</th><th class="num">Formandos</th><th class="num">Bruto</th><th class="num">Líquido</th></tr>
+    ${SIT_ORDER.map(s=>({s, rs:rows.filter(r=>r.sit===s)})).filter(x=>x.rs.length).map(x=>{const tt=totais(x.rs); const bruto=sum(x.rs,r=>x.s==='pago'||x.s==='repasse'?r.pago:r.valor); const liq=x.s==='pago'?tt.pagoLiq:x.s==='repasse'?tt.repasse:x.s==='vencer'?tt.vencer:x.s==='cancel'?0:tt.atrasado; return `<tr><td>${badge(x.s)}</td><td class="num">${fmtN(x.rs.length)}</td><td class="num">${uniq(x.rs.map(r=>r.key)).length}</td><td class="num">${fmtBRL(bruto)}</td><td class="num">${x.s==='cancel'?'—':fmtBRL(liq)}</td></tr>`;}).join('')}
+  </table></div></div>
+  <div class="small muted" style="margin-top:16px;text-align:center">Arquivo: ${esc(d.arquivo)} · carregado em ${fmtDT(d.carregadoEm)} · ${fmtN(d.rows.length)} linhas</div>`;
+}
+function glossario(){
+  $('#modalBox').innerHTML=`<div class="head"><h2>Glossário — como ler os números</h2><button class="icon" id="closeModal" aria-label="Fechar">${I.x}</button></div>
+    <dl class="gloss">
+      <dt>Valor da parcela (bruto)</dt><dd>O que o formando paga no boleto/Pix/cartão.</dd>
+      <dt>Taxas</dt><dd>Tarifa de cobrança (≈ R$ 1,50 por boleto) + tarifa de antecipação (cartão) + taxa Keeper (≈ 0,9%). É o que a plataforma retém de cada parcela.</dd>
+      <dt>Líquido previsto</dt><dd>Valor da parcela menos as taxas: o que efetivamente cai na conta da turma se a parcela for paga em dia.</dd>
+      <dt>Valor pago</dt><dd>O que o formando pagou de fato, incluindo juros e multa quando pagou atrasado.</dd>
+      <dt>Creditado</dt><dd>Parcela paga cujo valor líquido já foi conciliado e está na conta da turma.</dd>
+      <dt>Aguardando repasse</dt><dd>Parcela paga no cartão de crédito ou assinatura: o formando já pagou, mas a operadora ainda não repassou. No Keeper aparece como "A receber". Entra na conta na data da conciliação.</dd>
+      <dt>A vencer</dt><dd>Parcela futura, dentro do prazo.</dd>
+      <dt>Atrasado</dt><dd>Parcela vencida e não paga. No Keeper aparece como "Vencido" ou "Falha no pagamento". Quando o formando pagar, virá com juros e multa.</dd>
+      <dt>Cancelada</dt><dd>Compra cancelada (desistência, troca de lote…). Não entra em nenhum total. Para ver, marque "Cancelada" nos filtros.</dd>
+      <dt>Previsto (total)</dt><dd>Soma de todas as parcelas não canceladas: o "quanto vamos arrecadar se todo mundo pagar".</dd>
+      <dt>Mês de vencimento × mês de pagamento</dt><dd>"Previsão por mês" mostra o que está programado por vencimento; "Efetivamente pago" mostra quando o dinheiro de fato entrou.</dd>
+    </dl>`;
+  $('#modal').classList.add('on'); $('#closeModal').onclick=()=>$('#modal').classList.remove('on');
+}
+
+/* ===================== export ===================== */
+function tableToAOA(tbl){
+  const out=[]; for(const tr of tbl.querySelectorAll('tr')){ const cells=[...tr.children]; if(!cells.length) continue; out.push(cells.map(td=>{ const t=(td.innerText||td.textContent).replace(/\s*[▲▼]$/,'').replace(/\s*\n[\s\S]*$/,'').trim(); const m=t.match(/^(-?)R\$\s?([\d.]+,\d{2})$/); if(m) return parseFloat(m[2].replace(/\./g,'').replace(',','.'))*(m[1]?-1:1); return t; })); } return out;
+}
+function exportTable(id, nome){
+  const tbl=document.getElementById(id); if(!tbl){ toast('Nada para exportar'); return; }
+  const aoa=tableToAOA(tbl); const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols']=Array.from({length:aoa[0].length},(_,i)=>({wch:Math.min(45,Math.max(10,...aoa.map(r=>String(r[i]??'').length)))}));
+  for(const cell in ws){ if(cell[0]==='!') continue; if(typeof ws[cell].v==='number' && !Number.isInteger(ws[cell].v)) ws[cell].z='"R$" #,##0.00'; }
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Relatório');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Relatório',nome],['Gerado em',fmtDT(new Date())],['Dados do Keeper de',fmtDT(DATA.geradoEm||DATA.carregadoEm)],['Filtro',filtrosTexto()]]), 'Sobre');
+  XLSX.writeFile(wb, `formatura-${nome}-${isoDate(new Date())}.xlsx`.replace(/[^\w.\-]+/g,'-')); toast('Planilha gerada');
+}
+function exportParcelas(rows){
+  const cols=PCOLS.filter(c=>PVIS.has(c.k));
+  const aoa=[cols.map(c=>c.l)].concat(sortRows(rows,'parcelas',{key:'venc',dir:1}).map(r=>cols.map(c=>{ const v=r[c.k]; if(c.k==='sit') return SIT[v]; if(c.k==='forma') return nice(v); if(v instanceof Date) return v; if(c.k==='cpf') return fmtCPF(v); return v; })));
+  const ws=XLSX.utils.aoa_to_sheet(aoa,{cellDates:true}); ws['!cols']=cols.map(c=>({wch:c.num?14:22}));
+  for(const cell in ws){ if(cell[0]==='!') continue; const c=ws[cell]; if(c.t==='d') c.z='dd/mm/yyyy'; else if(typeof c.v==='number'&&!Number.isInteger(c.v)) c.z='"R$" #,##0.00'; }
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Parcelas');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Filtro',filtrosTexto()],['Gerado em',fmtDT(new Date())]]),'Sobre');
+  XLSX.writeFile(wb, `formatura-parcelas-${isoDate(new Date())}.xlsx`); toast('Planilha gerada');
+}
+
+/* ===================== eventos ===================== */
+function bindView(rows){
+  const v=$('#view');
+  v.querySelectorAll('th[data-sort]').forEach(h=>h.onclick=()=>{ const tid=h.dataset.tid, k=h.dataset.sort; const s=SORT[tid]; SORT[tid]= s&&s.key===k ? {key:k,dir:-s.dir} : {key:k,dir:1}; render(); });
+  v.querySelectorAll('[data-aluno]').forEach(el=>el.onclick=()=>extratoAluno(el.dataset.aluno));
+  v.querySelectorAll('[data-export]').forEach(b=>b.onclick=()=>{ const id=b.dataset.export; if(id==='parcelas') return exportParcelas(rows); exportTable('t-'+id, id); });
+  v.querySelectorAll('[data-tip]').forEach(el=>{ const show=e=>{ const t=$('#tip'); t.textContent=el.dataset.tip; t.style.display='block'; const x=(e.touches?e.touches[0].clientX:e.clientX), y=(e.touches?e.touches[0].clientY:e.clientY); t.style.left=Math.max(4,Math.min(x+12, innerWidth-t.offsetWidth-8))+'px'; t.style.top=(y-34)+'px'; }; el.onmousemove=show; el.ontouchstart=show; el.onmouseleave=()=>$('#tip').style.display='none'; el.ontouchend=()=>setTimeout(()=>$('#tip').style.display='none',1200); });
+  v.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copy($('#'+b.dataset.copy).innerText));
+  v.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>share($('#'+b.dataset.share).innerText));
+  const on=(id,fn)=>{ const e=$('#'+id); if(e) e.onclick=fn; };
+  on('copyAtraso',()=>copy(textoAtraso(rows))); on('shareAtraso',()=>share(textoAtraso(rows)));
+  on('copyGeral',()=>copy($('#txtGeral').value)); on('shareGeral',()=>share($('#txtGeral').value)); on('printGeral',()=>window.print());
+  on('mNovo',async()=>{ const ok=await autoLoad(true); if(!ok && !AUTO_OK) $('#file').click(); }); on('mArquivo',()=>$('#file').click()); on('mGloss',glossario); on('mPrint',()=>window.print());
+  on('mLimpar',()=>{ if(confirm('Apagar a planilha salva neste aparelho?')){ localStorage.removeItem('keeperData'); location.reload(); } });
+  on('btnCols',()=>$('#colPicker').classList.toggle('hide'));
+  v.querySelectorAll('[data-col]').forEach(c=>c.onclick=()=>{ const k=c.dataset.col; PVIS.has(k)?PVIS.delete(k):PVIS.add(k); localStorage.setItem('pvis',JSON.stringify([...PVIS])); render(); $('#colPicker').classList.remove('hide'); });
+  const q=$('#qAluno'); if(q){ let h; q.oninput=()=>{ F.aluno=q.value; clearTimeout(h); h=setTimeout(()=>{ const pos=q.selectionStart; render(); const q2=$('#qAluno'); if(q2){ q2.focus(); q2.setSelectionRange(pos,pos);} },250); }; }
+}
+function openSheet(){ syncFilterInputs(); buildChips(); $('#sheet').classList.add('on'); $('#scrim').classList.add('on'); }
+function closeSheet(){ $('#sheet').classList.remove('on'); $('#scrim').classList.remove('on'); }
+function buildChips(){
+  const mk=(id,vals,set,lbl)=>{ const el=$(id); el.innerHTML=vals.map(v=>`<span class="chip ${set.has(v)?'on':''}" data-v="${esc(v)}">${esc(lbl?lbl(v):v)}</span>`).join(''); el.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{ const v=c.dataset.v; set.has(v)?set.delete(v):set.add(v); c.classList.toggle('on'); if(!isMobile()) render(); }); };
+  mk('#fPacote', uniq(DATA.rows.map(r=>r.pacote)).sort((a,b)=>loteCurto(a).localeCompare(loteCurto(b),'pt-BR',{numeric:true})), F.pacotes);
+  mk('#fStatus', SIT_ORDER, F.status, s=>SIT[s]);
+  mk('#fForma', uniq(DATA.rows.map(r=>r.forma)).sort(), F.formas, nice);
+  $('#atalhos').querySelectorAll('.chip').forEach(c=>{ c.classList.toggle('on', c.dataset.r===F._atalho); c.onclick=()=>{ const h=hoje(); let de=null,ate=null; const r=c.dataset.r;
+    if(r==='mes'){ de=new Date(h.getFullYear(),h.getMonth(),1); ate=new Date(h.getFullYear(),h.getMonth()+1,0); }
+    else if(r==='mesant'){ de=new Date(h.getFullYear(),h.getMonth()-1,1); ate=new Date(h.getFullYear(),h.getMonth(),0); }
+    else if(r==='prox'){ de=new Date(h.getFullYear(),h.getMonth()+1,1); ate=new Date(h.getFullYear(),h.getMonth()+2,0); }
+    else if(r==='ate'){ ate=h; } else if(r==='ano'){ de=new Date(h.getFullYear(),0,1); ate=new Date(h.getFullYear(),11,31); }
+    F.de=isoDate(de); F.ate=isoDate(ate); F._atalho=r; F.tipoData = r==='tudo' ? 'none' : (F.tipoData==='none'?'venc':F.tipoData);
+    syncFilterInputs(); buildChips(); if(!isMobile()) render(); }; });
+}
+function syncFilterInputs(){ $('#fTipoData').value=F.tipoData; $('#fDe').value=F.de; $('#fAte').value=F.ate; $('#fAluno').value=F.aluno; }
+function bindGlobal(){
+  $('#fTipoData').onchange=e=>{ F.tipoData=e.target.value; if(!isMobile()) render(); };
+  $('#fDe').onchange=e=>{ F.de=e.target.value; F._atalho=null; if(F.tipoData==='none'&&F.de) F.tipoData='venc'; syncFilterInputs(); buildChips(); if(!isMobile()) render(); };
+  $('#fAte').onchange=e=>{ F.ate=e.target.value; F._atalho=null; if(F.tipoData==='none'&&F.ate) F.tipoData='venc'; syncFilterInputs(); buildChips(); if(!isMobile()) render(); };
+  let h; $('#fAluno').oninput=e=>{ F.aluno=e.target.value; clearTimeout(h); if(!isMobile()) h=setTimeout(render,250); };
+  $('#btnLimpar').onclick=()=>{ F=defaultFilters(); syncFilterInputs(); buildChips(); render(); };
+  $('#btnAplicar').onclick=()=>{ closeSheet(); render(); };
+  $('#closeSheet').onclick=closeSheet; $('#scrim').onclick=closeSheet;
+  $('#btnFiltros').onclick=()=>{ if(DATA) openSheet(); };
+  $('#btnNovo').onclick=async()=>{ toast('Buscando dados novos…'); const ok=await autoLoad(true); if(!ok && !AUTO_OK) $('#file').click(); };
+  $('#modal').onclick=e=>{ if(e.target.id==='modal') $('#modal').classList.remove('on'); };
+  const inp=$('#file'), drop=$('#drop');
+  $('#pick').onclick=e=>{ e.preventDefault(); inp.click(); };
+  inp.onchange=()=>{ if(inp.files[0]) handleFile(inp.files[0]); inp.value=''; };
+  ['dragenter','dragover'].forEach(ev=>document.addEventListener(ev,e=>{ e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave','drop'].forEach(ev=>document.addEventListener(ev,e=>{ e.preventDefault(); drop.classList.remove('over'); }));
+  document.addEventListener('drop',e=>{ const f=e.dataTransfer.files[0]; if(f) handleFile(f); });
+  let lastMobile=isMobile(); window.addEventListener('resize',()=>{ if(isMobile()!==lastMobile){ lastMobile=isMobile(); render(); } });
+}
+
+/* ===================== dados automáticos (dados.enc publicado pelo robô) ===================== */
+async function decryptEnc(buf, senha){
+  const b=new Uint8Array(buf); const salt=b.slice(0,16), iv=b.slice(16,28), ct=b.slice(28);
+  const km=await crypto.subtle.importKey('raw', new TextEncoder().encode(senha), 'PBKDF2', false, ['deriveKey']);
+  const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:200000,hash:'SHA-256'}, km, {name:'AES-GCM',length:256}, false, ['decrypt']);
+  return crypto.subtle.decrypt({name:'AES-GCM',iv}, key, ct);
+}
+let AUTO_OK=false;
+function askKey(){
+  return new Promise(res=>{
+    $('#modalBox').innerHTML=`<div class="head"><div><h2>🔐 Senha dos dados</h2><div class="small muted">Os dados são atualizados automaticamente e ficam criptografados. Digite a senha combinada (só na primeira vez neste aparelho).</div></div></div>
+      <input type="password" id="keyInput" placeholder="senha" autocomplete="current-password" style="width:100%;border:1px solid var(--line2);border-radius:10px;padding:12px;font-size:16px">
+      <div class="btns" style="margin-top:12px;justify-content:flex-end"><button id="keyCancel">Agora não</button><button class="primary" id="keyOk">Entrar</button></div>`;
+    $('#modal').classList.add('on'); const inp=$('#keyInput'); setTimeout(()=>inp.focus(),100);
+    const done=v=>{ $('#modal').classList.remove('on'); res(v); };
+    $('#keyOk').onclick=()=>done(inp.value.trim()); $('#keyCancel').onclick=()=>done(null); inp.onkeydown=e=>{ if(e.key==='Enter') done(inp.value.trim()); };
+  });
+}
+async function autoLoad(manual){
+  if(location.protocol==='file:' || !window.crypto?.subtle) return false;
+  let r; try{ r=await fetch('dados.enc?t='+Date.now(),{cache:'no-store'}); }catch(e){ return false; }
+  if(!r.ok) return false;
+  AUTO_OK=true;
+  const buf=await r.arrayBuffer();
+  let senha=localStorage.getItem('dataKey');
+  if(!senha){ senha=await askKey(); if(!senha) return false; }
+  let plain; try{ plain=await decryptEnc(buf,senha); }catch(e){ localStorage.removeItem('dataKey'); alert('Senha dos dados incorreta. Toque em ↻ para tentar de novo.'); return false; }
+  localStorage.setItem('dataKey',senha);
+  try{
+    const wb=XLSX.read(new Uint8Array(plain),{type:'array',cellDates:true}); const d=parseWorkbook(wb,'atualização automática');
+    const lm=r.headers.get('last-modified'); d.publicadoEm = lm? new Date(lm) : null;
+    const novo = !DATA || !DATA.geradoEm || (d.geradoEm && d.geradoEm.getTime()>DATA.geradoEm.getTime());
+    if(novo){ loadData(d); toast('Dados atualizados automaticamente ✓'); } else if(manual) toast('Você já está com os dados mais recentes');
+    return true;
+  }catch(e){ console.error(e); if(manual) alert('Não consegui ler os dados automáticos: '+e.message); return false; }
+}
+
+/* ===================== carga ===================== */
+function loadData(d, fromCache){
+  DATA=d; F=F||defaultFilters();
+  try{ const pv=JSON.parse(localStorage.getItem('pvis')||'null'); if(Array.isArray(pv)&&pv.length) PVIS=new Set(pv); }catch(e){}
+  $('#upload').classList.add('hide'); $('#app').classList.remove('hide');
+  renderMeta(); renderNav(); render();
+  if(!fromCache){ saveLocal(d); toast('Dados atualizados!'); }
+}
+function handleFile(file){
+  if(typeof XLSX==='undefined'){ alert('A biblioteca de leitura de planilhas não carregou. Verifique a internet e recarregue a página.'); return; }
+  const fr=new FileReader();
+  fr.onload=e=>{ try{ const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true}); loadData(parseWorkbook(wb,file.name)); window.scrollTo({top:0}); } catch(err){ alert('Não consegui ler esta planilha.\n\n'+err.message); console.error(err); } };
+  fr.readAsArrayBuffer(file);
+}
+(function init(){
+  bindGlobal();
+  const c=loadLocal(); if(c) loadData(c, true);
+  autoLoad(false);
+})();
+</script>
+</body>
+</html>

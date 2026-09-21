@@ -1,0 +1,6 @@
+.env
+sync-erro.png
+exemplo*.xlsx
+*.xlsx
+__pycache__/
+.claude/
