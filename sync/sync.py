@@ -16,6 +16,7 @@ Uso local (para testar):
 """
 import base64
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -46,29 +47,46 @@ def encrypt(data: bytes, passphrase: str) -> bytes:
 
 
 def dismiss_popups(page):
-    """Fecha o aviso do app e o de LGPD, se aparecerem (só o 'x', sem aceitar nada por ela)."""
-    for sel in ("mat-dialog-container button:has-text('x')", "mat-dialog-container [aria-label='Close']",
-                "mat-dialog-container button:has-text('×')"):
-        try:
-            page.locator(sel).first.click(timeout=1500)
-            time.sleep(0.5)
-        except PWTimeout:
-            pass
+    """Fecha o aviso do app (Esc) e remove o fundo escuro que trava os cliques.
+    Não aceita cookies nem LGPD em nome dela — só tira o que bloqueia a tela."""
+    for _ in range(3):
+        if page.locator("mat-dialog-container").count() == 0:
+            break
+        page.keyboard.press("Escape")
+        time.sleep(0.6)
+    page.evaluate("""() => {
+        document.querySelectorAll('.cdk-overlay-backdrop').forEach(e => e.remove());
+        document.querySelectorAll('.cdk-overlay-pane').forEach(e => { if (!e.querySelector('input')) e.remove(); });
+    }""")
+    time.sleep(0.3)
+
+
+def open_login_form(page):
+    """Vai da tela inicial até o formulário (campos de e-mail e senha visíveis)."""
+    page.goto(SITE, wait_until="networkidle")
+    time.sleep(1.5)
+    dismiss_popups(page)
+    senha = page.locator("input[type='password']")
+    if senha.count() == 0 or not senha.first.is_visible():
+        page.get_by_text(re.compile(r"fazer login", re.I)).first.click(timeout=10000)
+        senha.first.wait_for(state="visible", timeout=15000)
+    email = page.get_by_placeholder(re.compile(r"mail|cpf", re.I))
+    if email.count() == 0:
+        email = page.locator("input:not([type='password'])").filter(visible=True)
+    return email.first, senha.first
 
 
 def login(page, email: str, senha: str):
-    page.goto(SITE, wait_until="networkidle")
-    dismiss_popups(page)
-    # Tela inicial -> "FAZER LOGIN"
-    try:
-        page.get_by_role("button", name="FAZER LOGIN").click(timeout=8000)
-    except PWTimeout:
-        pass  # já está na tela de login
-    page.locator("input:not([type='password'])").first.fill(email)
-    page.locator("input[type='password']").first.fill(senha)
-    page.get_by_role("button", name="ENTRAR").click()
-    # Logado quando o painel aparece
-    page.wait_for_url(lambda u: "/home" in u or u.rstrip("/") == SITE.rstrip("/"), timeout=30000)
+    campo_email, campo_senha = open_login_form(page)
+    campo_email.fill(email)
+    campo_senha.fill(senha)
+    botao = page.locator("button[type='submit'], button", has_text=re.compile(r"entrar", re.I))
+    if botao.count():
+        botao.first.click()
+    else:
+        campo_senha.press("Enter")
+    # Logado quando o painel aparece (menu lateral / "Painel inicial")
+    page.get_by_text(re.compile(r"painel inicial", re.I)).first.wait_for(state="visible", timeout=45000)
     page.wait_for_load_state("networkidle")
     dismiss_popups(page)
 

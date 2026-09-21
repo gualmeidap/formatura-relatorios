@@ -4,3 +4,4 @@ exemplo*.xlsx
 *.xlsx
 __pycache__/
 .claude/
+.tmp/
