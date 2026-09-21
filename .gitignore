@@ -5,3 +5,4 @@ exemplo*.xlsx
 __pycache__/
 .claude/
 .tmp/
+sync/ultimo-log.txt
