@@ -6,45 +6,45 @@ Duas formas de alimentar os dados:
 
 | | Manual | Automática (robô) |
 |---|---|---|
-| Como | ela baixa a planilha no Keeper e carrega no app | um robô baixa toda noite e o app carrega sozinho ao abrir |
-| Precisa de | só o `index.html` publicado (ou aberto no PC) | repositório GitHub + GitHub Actions + GitHub Pages (tudo grátis) |
+| Como | ela baixa a planilha no Keeper e carrega no app | o robô baixa toda noite e o app carrega sozinho ao abrir |
+| Precisa de | só o `index.html` publicado (ou aberto no PC) | robô agendado no PC do Gustavo + GitHub Pages (grátis) |
 | Segurança | nada sai do aparelho | planilha publicada **criptografada** (AES-256); o app pede uma senha uma vez |
 
 As duas convivem: mesmo com o robô, o botão **Mais → Carregar planilha manualmente** continua disponível.
 
 ---
 
-## 1. Publicar o app + robô (GitHub, ~15 min, uma vez só)
+## 1. Como está montado (produção)
 
-1. Crie um repositório no GitHub (pode ser **privado**; o Pages funciona em repositório privado só em contas pagas — se for conta gratuita, use **público**: o `index.html` não tem dados e o `dados.enc` é criptografado).
-2. Suba o conteúdo desta pasta (`index.html`, `sync/`, `.github/`, `.gitignore`, `LEIA-ME.md`). **Não** suba a planilha de exemplo (`.gitignore` já bloqueia `.xlsx` e `.env`).
-3. **Settings → Secrets and variables → Actions → New repository secret**, crie três:
-   - `KEEPER_EMAIL` — e-mail (ou CPF) de login dela no Keeper
-   - `KEEPER_SENHA` — senha do Keeper
-   - `DATA_KEY` — uma frase secreta forte que vocês inventam. É a senha que o app vai pedir no iPhone.
-4. **Settings → Pages → Source: Deploy from a branch → main / (root)**. Anote a URL (`https://SEU-USUARIO.github.io/NOME-DO-REPO/`).
-5. **Actions → "Atualizar dados do Keeper" → Run workflow** para testar. Em ~2 min deve aparecer o commit `dados: …` com o arquivo `dados.enc`.
-   - Se falhar, abra o job: há um artefato `sync-erro` com uma captura da tela do Keeper no momento do erro (normalmente é login recusado ou algum popup novo).
-6. Depois disso o robô roda sozinho **todo dia às 00:00 (Brasília)**. Para mudar o horário, edite o `cron` em `.github/workflows/sync.yml` (está em UTC; Brasília = UTC−3).
+- **Site**: GitHub Pages deste repositório → `https://gualmeidap.github.io/formatura-relatorios/` (é o `index.html`; não contém dados).
+- **Dados**: `dados.enc` no mesmo repositório, criptografado (AES-256-GCM) com a `DATA_KEY` do `.env`. O app pede essa senha uma vez no aparelho e depois carrega sozinho a cada abertura.
+- **Robô** (`sync/sync.py` + `sync/rodar.ps1`): roda **no PC do Gustavo**, entra no Keeper com a conta dela, baixa a planilha, criptografa e faz `git push`. Em ~1 min o Pages publica.
 
-> O login no Keeper por senha gera sessão nova a cada execução; a conta dela continua funcionando normalmente no app do Keeper. As credenciais ficam só nos *secrets* do GitHub (criptografados, ninguém consegue ler depois de salvos).
+> Por que no PC e não na nuvem: a API do Keeper recusa conexões vindas de servidores do GitHub Actions (testado — `net::ERR_FAILED` no login). De um computador doméstico funciona.
 
-### Rodar o robô no seu PC em vez do GitHub (opcional)
+### Rodar o robô agora (manual)
 
 ```bash
-pip install -r sync/requirements.txt
-playwright install chromium
+powershell -NoProfile -ExecutionPolicy Bypass -File sync/rodar.ps1
 ```
 
-Copie `.env.example` para `.env`, preencha, e rode (`python sync/sync.py` com as variáveis definidas). Ele gera `dados.enc`; aí é você que precisa publicar o arquivo (commit + push). Dá para agendar no Agendador de Tarefas do Windows, mas o PC precisa estar ligado — por isso o GitHub Actions é melhor.
+Pré-requisitos (uma vez): `pip install -r sync/requirements.txt` e `python -m playwright install chromium`; `.env` preenchido (modelo em `.env.example`). O log fica em `sync/ultimo-log.txt`; se der erro no Keeper, ele salva `sync-erro.png` com a tela.
+
+### Agendar toda noite (Agendador de Tarefas do Windows)
+
+```bash
+schtasks /create /tn "Formatura - sync Keeper" /sc daily /st 23:30 /tr "powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\Gustavo\formatura-relatorios\sync\rodar.ps1" /f
+```
+
+O PC precisa estar ligado (pode estar bloqueado) às 23:30. Para rodar também sempre que você fizer login no Windows (cobre dias em que o PC ficou desligado), crie uma segunda tarefa trocando `/sc daily /st 23:30` por `/sc onlogon`. Para remover: `schtasks /delete /tn "Formatura - sync Keeper" /f`.
 
 ---
 
 ## 2. Instalar no iPhone dela
 
-1. Abrir a URL do Pages no **Safari** → Compartilhar → **Adicionar à Tela de Início**.
-2. Abrir o ícone "Tesouraria". Na primeira vez ele pede a **senha dos dados** (`DATA_KEY`). Fica salva no aparelho.
-3. Pronto: toda vez que abrir, ele busca a atualização da noite anterior. O selo **🤖 automático** e a data "Dados do Keeper: …" mostram de quando são os números. O botão **↻** força uma nova busca.
+1. Abrir `https://gualmeidap.github.io/formatura-relatorios/` no **Safari** → Compartilhar → **Adicionar à Tela de Início**.
+2. Abrir o ícone "Tesouraria". Na primeira vez ele pede a **senha dos dados** (a `DATA_KEY` do `.env`). Fica salva no aparelho.
+3. Pronto: toda vez que abrir, ele busca a atualização mais recente publicada pelo robô. O selo **🤖 automático** e a data "Dados do Keeper: …" mostram de quando são os números. O botão **↻** força uma nova busca.
 
 Se ela precisar de um número *de agora* (antes da atualização da noite): Keeper → Vendas → Vendas Parcelas Detalhado → Baixar → no app, **Mais → Carregar planilha manualmente**.
 
@@ -75,6 +75,7 @@ Se ela precisar de um número *de agora* (antes da atualização da noite): Keep
 
 - `index.html` — o app (arquivo único; usa SheetJS via CDN, precisa de internet para abrir).
 - `sync/sync.py` — robô: login no Keeper (Playwright), download da planilha pela API interna, criptografia.
-- `.github/workflows/sync.yml` — agendamento noturno no GitHub Actions.
-- `.env.example` — modelo de variáveis para rodar o robô localmente.
+- `sync/rodar.ps1` — roda o robô lendo o `.env` e publica o `dados.enc` no GitHub.
+- `.env` (não vai para o git) — `KEEPER_EMAIL`, `KEEPER_SENHA`, `DATA_KEY`; modelo em `.env.example`.
+- `dados.enc` — planilha criptografada publicada pelo robô.
 - `exemplo - Vendas Parcelas Detalhado.xlsx` — export real de 21/09/2026, para testes manuais (não vai para o git).
